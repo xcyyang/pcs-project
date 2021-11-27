@@ -98,51 +98,63 @@ var Client = (function(window) {
         var params = {playerColor: playerColor};
         game = new Game (params);
         // Get past event
-        var results = await JunqiContract.getPastEvents('Join',{
-          filter:{gameID:gameID},
-          fromBlock: 0,
-          toBlock: 'latest'
-        });
-        for (let i=0;i<results.length;i++){
-          let playerColor_tmp = results[i]['returnValues']['index']=='0'? 'blue':'red';
-          game.addPlayer({playerColor:playerColor_tmp});
-        }
-        results = await JunqiContract.getPastEvents('FinishSetup',{
-          filter:{gameID:gameID},
-          fromBlock: 0,
-          toBlock: 'latest'
-        });
-        for (let i=0;i<results.length;i++){
-          let playerColor_tmp = results[i]['returnValues']['index']=='0'? 'blue':'red';
-          game.finishSetup({playerColor:playerColor_tmp});
-        }
+        // var results = await JunqiContract.getPastEvents('Join',{
+        //   filter:{gameID:gameID},
+        //   fromBlock: 0,
+        //   toBlock: 'latest'
+        // }, function(error,events){
+        //   if(events){
+        //     console.log("get past join events");
+        //     console.log(events);
+        //     for (let i=0;i<events.length;i++){
+        //       let playerColor_tmp = events[i]['returnValues']['index']=='0'? 'blue':'red';
+        //       game.addPlayer({playerColor:playerColor_tmp});
+        //     }
+        //   }
+        // });
+
+        // results = await JunqiContract.getPastEvents('FinishSetup',{
+        //   filter:{gameID:gameID},
+        //   fromBlock: 0,
+        //   toBlock: 'latest'
+        // }, function(error,events){
+        //   if(events){
+        //     console.log("get past FinishSetup events");
+        //     console.log(events);
+        //     for (let i=0;i<events.length;i++){
+        //       let playerColor_tmp = events[i]['returnValues']['index']=='0'? 'blue':'red';
+        //       game.finishSetup({playerColor:playerColor_tmp});
+        //     }
+        //   }
+        // });
         // Update UI
         gameState = game;
         update();
 
-        JunqiContract.events.Join({filter:{gameID: gameID},fromBlock:0},function(error, event){ console.log(event);})
-        .on('data',function(event){
-        if(event!=null){
-          //console.log(event);
-          let playerColor_tmp = event['returnValues']['index']=='0'? 'blue':'red';
-          console.log("add player");
-          console.log(playerColor_tmp);
-          game.addPlayer({playerColor:playerColor_tmp});
-          gameState = game;
-          update();
-        }
+        // Add subscribe
+        JunqiContract.events.Join({filter:{gameID: gameID},fromBlock:0},function(error, event){
+          if(event!=null&&event['returnValues']['gameID']==gameID){
+            console.log(event);
+            //console.log(event);
+            let playerColor_tmp = event['returnValues']['index']=='0'? 'blue':'red';
+            console.log("add player");
+            console.log(playerColor_tmp);
+            game.addPlayer({playerColor:playerColor_tmp});
+            gameState = game;
+            update();
+          }
         });
 
-        JunqiContract.events.FinishSetup({filter:{gameID: gameID},fromBlock:0},function(error, event){ console.log(event);})
-        .on('data', function(event){
-        if(event!=null){
-          let playerColor_tmp = event['returnValues']['index']=='0'? 'blue':'red';
-          console.log("finish setup");
-          console.log(playerColor_tmp);
-          game.finishSetup({playerColor:playerColor_tmp});
-          gameState=game;
-          update();
-        } 
+        JunqiContract.events.FinishSetup({filter:{gameID: gameID},fromBlock:0},function(error, event){
+          if(event!=null&&event['returnValues']['gameID']==gameID){
+            console.log(event);
+            let playerColor_tmp = event['returnValues']['index']=='0'? 'blue':'red';
+            console.log("finish setup");
+            console.log(playerColor_tmp);
+            game.finishSetup({playerColor:playerColor_tmp});
+            gameState=game;
+            update();
+          } 
         });
     };
     // Subscribe Join event
