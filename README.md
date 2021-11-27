@@ -12,3 +12,16 @@
 1. https://blog.logrocket.com/develop-test-deploy-smart-contracts-ganache/
 ## **Hello World of Snarkjs**
 1. https://github.com/iden3/snarkjs
+
+## **How to build this project**
+1. Run Ganache
+2. Deploy smart_contract
+  - truffle migrate
+  - truffle migrate --reset (used for resetting smart_contract)
+3. Run frontend server
+  - npm install
+  - node server.js
+4. Need two different browsers (firefox, chrome, edge)
+  - Install Metamask extension for these browsers
+  - add network(HTTP://127.0.0.1:7545, chain ID: 1337)
+  - import accounts for different browsers (private key in Ganache)
