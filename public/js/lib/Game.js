@@ -117,7 +117,7 @@ Game.prototype.finishSetup = function(playerData)
  * Apply move and regenerate game state.
  * Returns true on success and false on failure.
  */
-Game.prototype.move = function(moveString)
+Game.prototype.move = function(moveString,isMyself)
 {
     if (this.status === STATUS_PENDING) {
         var validSwap = _.findWhere(this.validSwap, parseMoveString(moveString));
@@ -138,10 +138,14 @@ Game.prototype.move = function(moveString)
     this.validSwap = [];
 
     // Test if move is valid
-    var validMove = _.findWhere(this.validMoves, parseMoveString(moveString));
+    if(isMyself){
+        var validMove = _.findWhere(this.validMoves, parseMoveString(moveString));
 
-    if (!validMove) {
-        return false;
+        if (!validMove) {
+            return false;
+        }
+    }else{
+        var validMove = parseMoveString(moveString);
     }
 
     // Evaluation is only required for attacks
@@ -153,9 +157,13 @@ Game.prototype.move = function(moveString)
         return false;
       }
     }
-
+    console.log("evaluateMove")
+    console.log(evaluatedMove);
     // Apply move
+    console.log(this.board);
     var selectedPiece = this.board.getPieceAtSquare(evaluatedMove.startSquare);
+    console.log(selectedPiece);
+    console.log("end selectedPiece");
     switch (evaluatedMove.type) {
         case 'move' :
             this.board.placePieceAtSquare(evaluatedMove.endSquare, selectedPiece);
@@ -192,12 +200,17 @@ Game.prototype.move = function(moveString)
     }, this);
 
     // Regenerate valid moves
-    this.validMoves = this.board.getMovesForPlayer(inactivePlayer.color);
+    if(!isMyself){
+        this.validMoves = this.board.getMovesForPlayer(inactivePlayer.color);
+    }
 
     // Set check status for both players
     _.each(this.players, function(p) {
-        p.inCheck = this.board.isPlayerFlagCaptured(p.color);
-        p.hasCommander = this.board.isCommanderAlive(p.color);
+        console.log("check status");
+        console.log(p);
+        //p.inCheck = this.board.isPlayerFlagCaptured(p.color);
+        //p.hasCommander = this.board.isCommanderAlive(p.color);
+        console.log(p);
     }, this);
 
     // Test for checkmate or stalemate
@@ -207,7 +220,9 @@ Game.prototype.move = function(moveString)
     }
 
     if (inactivePlayer.inCheck)
-    {
+    {   
+        console.log("checkmate");
+        console.log(inactivePlayer);
         this.status = 'checkmate';
     }
 
