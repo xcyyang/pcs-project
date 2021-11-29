@@ -11,7 +11,7 @@ contract Junqi {
   struct Game{
       address p1;
       address p2;
-      int8 [5][12] board;
+      // int8 [5][12] board;
       uint64 board1_hash;
       uint64 board2_hash;
       uint64 move_event_id;
@@ -65,7 +65,7 @@ contract Junqi {
   function join(uint gameID) external {
     Game storage game = games[gameID];
     require(game.exists && !game.active);
-
+    require(msg.sender!=game.p1);
     game.p2 = msg.sender;
     game.board2_hash = 0;
     game.p2_finish_setup = false;
@@ -73,25 +73,6 @@ contract Junqi {
     game.active = true;
     n_activegames++;
 
-    // init the board
-    // -1 for hide player1
-    // -2 for hide player2
-    // 0,...,11 for player1
-    // 12,...,23 for player2
-    int8 tmp = -1;
-    for (uint8 i = 0; i<12 ; i++){
-       if(i>5){tmp=-2;}  
-       for (uint8 j = 0; j<5; j++){
-         if((i==2||i==4||i==7||i==9)&&(j==1||j==3)){
-           continue;
-         }
-         if((i==3||i==8)&&(j==2)){
-           continue;
-         }
-         game.board[i][j]=tmp;
-       }
-     }
-    // Emit event
     emit Join(1, gameID);
   }
   function finishSetup (uint gameID) external {
@@ -110,6 +91,8 @@ contract Junqi {
      game.finish_setup = true;
      //emit FinishSetup(2,gameID);
     }
+    // TODO zksnark verifier
+    
   }
   function move (string memory moveString,string memory rankString, uint gameID) external {
     // rank string = -1 => move

@@ -1,26 +1,39 @@
 import {Game} from './lib/Game.js'
 import {Piece} from './lib/Piece.js'
-// import * as Web3 from './web3.min.js'
-// -1 for hide player1
-// -2 for hide player2
-// 0,...,11 for player1
-// 12,...,23 for player2
-// function compressBoard(playerColor,boardState){
-//   if (playerColor == 'blue'){
-        
-//   }else if (playerColor == 'red'){
 
-//   }
-//   return compressBoard;
-// }
-// function decompressBoard(){
-//   if (playerColor == 'blue'){
+// 13 for null
+// 12 for opponent
+// 0,...,11 for rank 
+function compressBoard(playerColor,boardState){
+  const m = 12;
+  let compressBoard = [];
+  for (let i = 0; i < m; i++) {
+    compressBoard.push([]);
+    compressBoard[i] = [13,13,13,13,13]; // make each element an array
+  }
+  console.log(compressBoard);
+  let i = 0;
+  let j = 11;
+  for (let sq in boardState){
+    if(i==5){
+      i = 0;
+      j--;
+    }
+    //console.log(sq);
+    let piece = boardState[sq];
+    if(piece){
+      compressBoard[j][i] = (piece.colorChar == playerColor[0])?parseInt(piece.rankStr,10):12;
+    }
+    i++;
+    // var pieceStr = (piece == null) ? null : (piece.colorChar + piece.rankStr)
+  }
+  console.log(JSON.stringify(compressBoard));
+  return compressBoard;
+}
+function decompressBoard(){
 
-//   }else if (playerColor == 'red'){
-    
-//   }
-//   return boardState;
-// }
+  return boardState;
+}
 
 var Client = (function(window) {
     var game = null;
@@ -406,6 +419,7 @@ var Client = (function(window) {
            //Finish setup
            //var result = game.finishSetup({playerColor: playerColor});
            // Send msg to Ethereum
+           compressBoard(playerColor,game.board.boardState);
            JunqiContract.methods.finishSetup(gameID).send({from: currentAccount});
       });
 

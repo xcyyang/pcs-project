@@ -1,4 +1,5 @@
 //var DB = null;
+var path = require('path');
 
 /**
  * Validate session data for "Game" page
@@ -177,5 +178,14 @@ exports.attach = function(app, db) {
   app.get('/game/:id', game);
   // app.post('/start',   startGame);
   // app.post('/join',    joinGame);
+  app.get('/zksnark/finishSetup.wasm', function(req, res){
+    const file = `../pcs-project/public/zksnark/finishSetup/finishSetup.wasm`;
+    res.sendFile(path.resolve(file)); // Set disposition and send it.
+  });
+  app.get('/zksnark/circuit_final.zkey', function(req, res){
+    const file = `../pcs-project/public/zksnark/finishSetup/circuit_final.zkey`;
+    res.sendFile(path.resolve(file)); // Set disposition and send it.
+  });
   app.all('*',         invalid);
+  
 };
