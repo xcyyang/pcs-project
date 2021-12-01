@@ -420,6 +420,7 @@ var Client = (function(window) {
            //var result = game.finishSetup({playerColor: playerColor});
            // Send msg to Ethereum
            compressBoard(playerColor,game.board.boardState);
+           
            JunqiContract.methods.finishSetup(gameID).send({from: currentAccount});
       });
 
@@ -769,11 +770,11 @@ var Client = (function(window) {
           }
 
           //Never display any other piece's rank
-          if (playerColor[0] !== 'b')
+          if (playerColor[0] !== 'b' && pieceRank == "-1")
           {
               return 'facedown blue';
           }
-          else if (playerColor[0] !== 'r')
+          else if (playerColor[0] !== 'r' && pieceRank == "-1")
           {
               return 'facedown red';
           }
