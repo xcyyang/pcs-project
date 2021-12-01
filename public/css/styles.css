@@ -102,15 +102,8 @@ table { border-collapse: collapse; }
 
 .facedown.blue:before {
     content: "默认";
-    object-fit: fill;
-    display:inline-block;
-    position: relative;
-    /* box-sizing: content-box; */
-    width: 71px;
-    height: 60px;
     color: #3B5999;
     background-color: #108FE8;
-    background-size: 60px 60px;
     border-left: solid 1px #2E4476;
     background: #3B5999;
     -webkit-box-shadow: 0px 5px 0px 0px #2E4476;
@@ -119,14 +112,8 @@ table { border-collapse: collapse; }
 
 .facedown.red:before {
     content: "默认";
-    object-fit: fill;
-    display:inline-block;
-    box-sizing: content-box;
-    width: 71px;
-    height: 60px;
     color: #DE463B;
     background-color: #DE463B;
-    background-size: 60px 60px;
     border-left: solid 1px #C02B21;
     -webkit-box-shadow: 0px 5px 0px 0px #C02B21;
     box-shadow: 0px 5px 0px 0px #C02B21;
