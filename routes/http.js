@@ -187,5 +187,4 @@ exports.attach = function(app, db) {
     res.sendFile(path.resolve(file)); // Set disposition and send it.
   });
   app.all('*',         invalid);
-  
 };

@@ -1,0 +1,14 @@
+{
+ "n8": 32,
+ "prime": "21888242871839275222246405745257275088548364400416034343698204186575808495617",
+ "nVars": 1,
+ "nOutputs": 0,
+ "nPubInputs": 0,
+ "nPrvInputs": 0,
+ "nLabels": 6,
+ "nConstraints": 0,
+ "constraints": [],
+ "map": [
+  0
+ ]
+}

@@ -4,6 +4,7 @@ pragma circom 2.0.0;
     // 0,...,11 for rank 
 include "../../node_modules/circomlib/circuits/pedersen.circom";
 include "../../node_modules/circomlib/circuits/bitify.circom";
+
 template point2num() {
     signal input x;
     signal input y;
@@ -291,19 +292,18 @@ template Move() {
     sub.square2[0] <== endsquare[0];
     sub.square2[1] <== endsquare[1];
 
-    if((x1 == 0 || x1 == 11)&&(y1==1||y1==3)|| board[startsquare[0]][startsquare[1]] == 10){
+    if((x1 == 0 || x1 == 11) && (y1 == 1||y1 == 3)|| board[x1][y1] == 10){
         //in the base or landmine
         isInvalid_tmp = 1;
         log(4);
     }else{
         if (onR1.out && onR2.out){
                 // on Rail move
-                if (board[startsquare[0]][startsquare[1]] != 9 && x1 != x2 && y1 != y2){
-                    //other can not turn
+                if (board[x1][y1] != 9 && x1 != x2 && y1 != y2){
+                    // other can not turn
                     isInvalid_tmp = 1;
                     log(5);
                 }else{
-
                     if(getP.out != 1){
                         isInvalid_tmp = 1;
                         log(0);
@@ -332,25 +332,25 @@ template Move() {
                                     }    
                                 }
                             }else{
-                                    if(x1>x2){
+                                if(x1>x2){
+                                    tempsquare[0] = tempsquare[0]-1;
+                                    while(tempsquare[0]!=x2){
+                                        if(board[tempsquare[0]][tempsquare[1]] != 13){
+                                            isInvalid_tmp = 1;
+                                            log(8);
+                                        }
                                         tempsquare[0] = tempsquare[0]-1;
-                                        while(tempsquare[0]!=x2){
-                                            if(board[tempsquare[0]][tempsquare[1]] != 13){
-                                                isInvalid_tmp = 1;
-                                                log(8);
-                                            }
-                                            tempsquare[0] = tempsquare[0]-1;
-                                        }
-                                    }else{
-                                        tempsquare[0] = tempsquare[0]+1;
-                                        while(tempsquare[0]!=x2){
-                                            if(board[tempsquare[0]][tempsquare[1]] != 13){
-                                                isInvalid_tmp = 1;
-                                                log(8);
-                                            }
-                                            tempsquare[0] = tempsquare[0]+1;
-                                        }
                                     }
+                                }else{
+                                    tempsquare[0] = tempsquare[0]+1;
+                                    while(tempsquare[0]!=x2){
+                                        if(board[tempsquare[0]][tempsquare[1]] != 13){
+                                            isInvalid_tmp = 1;
+                                            log(8);
+                                        }
+                                        tempsquare[0] = tempsquare[0]+1;
+                                    }
+                                }
                             }
                         }
                         if (endrank == 13){
@@ -389,23 +389,19 @@ template Move() {
                         }
                     }
                 }
-
-
         }else{
-                // normal move 
-                
-                
-                var distance = sub.out;
-                if (distance > 2 || distance ==0){
+            // normal move 
+            var distance = sub.out;
+            if (distance > 2 || distance ==0){
+                isInvalid_tmp = 1;
+                log(1);
+            }else if (distance == 2){
+                //not straight
+                if (x1 == 0 || x1 == 11 || x2 == 0 || x2 == 11 || (x1 + x2)==11){
                     isInvalid_tmp = 1;
-                    log(1);
-                }else if (distance == 2){
-                    //not straight
-                    if (x1 == 0 || x1 == 11 || x2 == 0 || x2 == 11 || (x1 + x2)==11){
-                        isInvalid_tmp = 1;
-                        log(2);
-                    }
+                    log(2);
                 }
+            }
                if (endrank == 13){
                             // just move
                             newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];

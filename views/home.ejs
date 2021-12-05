@@ -36,6 +36,7 @@
                                 </div>    
                             </div>
                         <button onclick="Join()" class="btn btn-primary">Join Game</button>
+                        <button onclick="HostMPC()" class="btn btn-primary">Test MPC</button>
                     <!-- </form> -->
                     </td>
                 </tr>
@@ -128,6 +129,11 @@
                     console.log(error);
                 }
                 }
+            }
+            async function HostMPC() {
+                console.log('DEBUG: retrieveing MPC result...')
+                const data = await $.getJSON('/json/mpc.json');
+                console.log('DEBUG: data = ', data);
             }
             Init();
         </script>

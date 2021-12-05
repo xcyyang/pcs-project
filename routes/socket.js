@@ -48,9 +48,9 @@ var join = function(gameID) {
   console.log(sess.playerName+' joined '+gameID);
 };
 
-/*
-Finish setting up pieces before allowing gameplay to begin.
-*/
+/**
+ * Finish setting up pieces before allowing gameplay to begin.
+ */
 var finishSetup = function(gameID) {
     var sess      = this.handshake.session;
     var debugInfo = {
