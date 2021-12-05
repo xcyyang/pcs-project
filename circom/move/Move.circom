@@ -1,19 +1,24 @@
 pragma circom 2.0.0;
-    // 13 for null
-    // 12 for opponent
-    // 0,...,11 for rank 
+
 include "../../node_modules/circomlib/circuits/pedersen.circom";
 include "../../node_modules/circomlib/circuits/bitify.circom";
+
+// 13 for null
+// 12 for opponent
+// 0,...,11 for rank
+
 template point2num() {
     signal input x;
     signal input y;
     signal output out;
+
     var n = 256;
     component xBits = Num2Bits(n);
     xBits.in <-- x;
     component yBits = Num2Bits(n);
     yBits.in <-- y;
     component resultNum = Bits2Num(n);
+
     for (var i=0; i<256-8; i++) {
         resultNum.in[i] <-- yBits.out[i];
     }
@@ -23,16 +28,15 @@ template point2num() {
     out <-- resultNum.out;
 }
 
-template onRail(){
+template onRail() {
     signal input square[2];
     signal output out;
     var i = square[0];
     var j = square[1];
     out <-- (((j==4||j==0)&&0<i&&i<11)||(0<j&&j<4&&(i==1||i==5||i==6||i==10)));
-
 }
 
-template abSub(){ 
+template abSub() { 
     // compute distance
     signal input square1[2];
     signal input square2[2];
@@ -56,7 +60,7 @@ template abSub(){
     out <-- i+j;
 }
 
-template findPath(){
+template findPath() {
     //get connection graph
     signal input board[12][5];
     signal input start[2];
@@ -216,7 +220,6 @@ template findPath(){
     out <-- through;
 }
 
-
 template Move() {
     signal input board[12][5];
     signal input player; // 0 for sender, 1 for reciever
@@ -228,6 +231,7 @@ template Move() {
     signal output board_hash;
     signal output isInvalid;
     signal output test;
+
     var isInvalid_tmp = 0;
     // compute hash and check rule
     var newBoard[12][5];
@@ -236,6 +240,7 @@ template Move() {
             newBoard[i][j] = board[i][j];
         }
     }
+
     //
     component hasher = Pedersen(480);
     // compare hash
@@ -292,12 +297,12 @@ template Move() {
     sub.square2[0] <== endsquare[0];
     sub.square2[1] <== endsquare[1];
 
-    if((x1 == 0 || x1 == 11)&&(y1==1||y1==3)|| board[startsquare[0]][startsquare[1]] == 10){
+    if ((x1 == 0 || x1 == 11) && (y1==1||y1==3) || board[startsquare[0]][startsquare[1]] == 10) {
         //in the base or landmine
         isInvalid_tmp = 1;
         log(4);
-    }else{
-        if (onR1.out && onR2.out){
+    } else {
+        if (onR1.out && onR2.out) {
                 // on Rail move
                 if (board[startsquare[0]][startsquare[1]] != 9 && x1 != x2 && y1 != y2){
                     //other can not turn
@@ -393,9 +398,7 @@ template Move() {
 
 
         }else{
-                // normal move 
-                
-                
+                // normal move
                 var distance = sub.out;
                 if (distance > 2 || distance ==0){
                     isInvalid_tmp = 1;
@@ -465,4 +468,4 @@ template Move() {
     test <== 3;
 }
 
-component main {public [player,startsquare,endsquare,startrank,endrank,lastboardhash]} = Move();
+component main {public [player]} = Move();
