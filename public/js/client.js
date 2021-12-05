@@ -42,6 +42,7 @@ var Client = (function(window) {
     var web3 = null;
     var JunqiContract = null;
     var currentAccount = null;
+    var boardHash = null; 
 
     var expectedMoveEventID = null;
     var waitOpponentsRank = false;
@@ -174,7 +175,7 @@ var Client = (function(window) {
           } 
         });
         expectedMoveEventID = 0;
-        JunqiContract.events.Move({filter:{gameID: gameID},fromBlock:"latest"},function(error, event){
+        JunqiContract.events.Move({filter:{gameID: gameID},fromBlock:"latest"},async function(error, event){
           if(event!=null&&event['returnValues']['gameID']==gameID&&event['returnValues']['id']==parseInt(expectedMoveEventID,10)){
             console.log(event);
             expectedMoveEventID+=1;
@@ -183,6 +184,12 @@ var Client = (function(window) {
             if(event['returnValues']['rankString']=="-1"){
               console.log(isMyself)
               game.move(event['returnValues']['moveString'],isMyself);
+
+              // generate proof()
+              // send post
+              // 
+              await JunqiContract.methods.proveMove(gameID).send({from:currentAccount});
+
               gameState=game;
               console.log(gameState);
               update();
@@ -194,6 +201,12 @@ var Client = (function(window) {
                   let endSquare = event['returnValues']['moveString'].split(" ")[2];
                   let opponentColor = (playerColor=='blue')?"red":"blue";
                   let opponentPiece = new Piece(opponentColor[0],event['returnValues']['rankString']);
+                  
+                  // generate proof()
+                  // send post
+                  // 
+                  await JunqiContract.methods.proveMove(gameID).send({from:currentAccount});
+                  
                   game.board.placePieceAtSquare(endSquare,opponentPiece);
                   game.move(event['returnValues']['moveString'],isMyself);
                   gameState=game;
@@ -212,13 +225,20 @@ var Client = (function(window) {
                   console.log(endSquare)
                   let pieceSendToOpponent = game.board.getPieceAtSquare(endSquare);
                   console.log(pieceSendToOpponent);
-                  JunqiContract.methods.move(event['returnValues']['moveString']
+                  
+                  // generate proof()
+                  // send post
+                  // 
+                  await JunqiContract.methods.proveMove(gameID).send({from:currentAccount});
+
+                  await JunqiContract.methods.move(event['returnValues']['moveString']
                     , pieceSendToOpponent.rankStr
                     , gameID).send({from: currentAccount});
                   // Update
                   game.move(event['returnValues']['moveString'],isMyself);
                   gameState=game;
                   update();
+                  // 
                 }
               }
             }
@@ -376,11 +396,11 @@ var Client = (function(window) {
     });
 
     // Perform a regular move
-    container.on('click', '.valid-move', function(ev) {
+    container.on('click', '.valid-move', async function(ev) {
         let moveStringAndRankString = generateMoveString(ev.target, '-');
         // Send move message to Ethereum
         console.log(moveStringAndRankString);
-        JunqiContract.methods.move(moveStringAndRankString.moveString
+        await JunqiContract.methods.move(moveStringAndRankString.moveString
                                   , "-1"
                                   , gameID).send({from: currentAccount});
         //messages.empty();
@@ -414,13 +434,40 @@ var Client = (function(window) {
     });
 
     //Finish setup
-      container.on('click', '#finishSetup', function(ev) {
+      container.on('click', '#finishSetup', async function(ev) {
            //socket.emit('finishSetup', gameID);
            //Finish setup
            //var result = game.finishSetup({playerColor: playerColor});
            // Send msg to Ethereum
-           compressBoard(playerColor,game.board.boardState);
-           JunqiContract.methods.finishSetup(gameID).send({from: currentAccount});
+           const board = (compressBoard(playerColor,game.board.boardState));
+           const player = (playerColor=='blue')?0:1;
+           console.log(board);
+           console.log(player);
+           var proofAndPublicSignals = null
+           proofAndPublicSignals =  await $.ajax({
+            type: 'POST',
+            url: '/zksnark/finishSetup',
+            data: JSON.stringify({board,player}), // or JSON.stringify ({name: 'jonas'}),
+            success: function(result) { 
+              //console.log('proof: ' + $.parseJSON(result));
+              //proofAndPublicSignals = $.parseJSON(result);
+            },
+            contentType: "application/json",
+            dataType: 'json'
+          });
+            console.log((proofAndPublicSignals));
+            const a = proofAndPublicSignals[0];
+            const b = proofAndPublicSignals[1];
+            const c = proofAndPublicSignals[2];
+            const input = proofAndPublicSignals[3];
+            // console.log(proofAndPublicSignals.publicSignals);
+            console.log(a);
+            console.log(b);
+            console.log(c);
+            console.log(input);
+            boardHash = proofAndPublicSignals[4];
+            console.log(boardHash);
+            JunqiContract.methods.finishSetup(gameID,a,b,c,input).send({from: currentAccount});
       });
 
 
@@ -769,11 +816,11 @@ var Client = (function(window) {
           }
 
           //Never display any other piece's rank
-          if (playerColor[0] !== 'b')
+          if (playerColor[0] !== 'b'&&pieceRank=="-1")
           {
               return 'facedown blue';
           }
-          else if (playerColor[0] !== 'r')
+          else if (playerColor[0] !== 'r'&&pieceRank=="-1")
           {
               return 'facedown red';
           }

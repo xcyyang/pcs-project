@@ -1,6 +1,25 @@
 //var DB = null;
 var path = require('path');
+const snarkjs = require('snarkjs')
+const fs = require('fs')
 
+
+function unstringifyBigInts(o) {
+  if (typeof o == "string" && /^[0-9]+$/.test(o)) {
+    return BigInt(o);
+  } else if (Array.isArray(o)) {
+    return o.map(unstringifyBigInts);
+  } else if (typeof o == "object") {
+    const res = {};
+    const keys = Object.keys(o);
+    keys.forEach(k => {
+      res[k] = unstringifyBigInts(o[k]);
+    });
+    return res;
+  } else {
+    return o;
+  }
+}
 /**
  * Validate session data for "Game" page
  * Returns valid data on success or null on failure
@@ -178,14 +197,93 @@ exports.attach = function(app, db) {
   app.get('/game/:id', game);
   // app.post('/start',   startGame);
   // app.post('/join',    joinGame);
-  app.get('/zksnark/finishSetup.wasm', function(req, res){
-    const file = `../pcs-project/public/zksnark/finishSetup/finishSetup.wasm`;
-    res.sendFile(path.resolve(file)); // Set disposition and send it.
+  app.post('/zksnark/move', async function (req,res){
+    const board = req.body.board; // [5][12]
+    const senderOrReceiver = req.body.senderOrReceiver; // 0 for sender, 1 for receiver
+    const startSquare = req.body.startSquare; // [2]
+    const endSquare = req.body.endSquare; // [2]
+    const startRank = req.body.startRank; // int
+    const endRank = req.body.endRank; // int 
+    const lastBoardHash = req.body.lastBoardHash;   // BigInt
+
+
+    const wc = require('../circom/move/Move_js/witness_calculator');
+    const wasm = path.resolve('./circom/move/Move_js/Move.wasm');
+    const zkey = path.resolve('./circom/move/circuit_final.zkey');
+    //const INPUTS_FILE = '/tmp/inputs';
+    const WITNESS_FILE = '/tmp/witness';
+
+    const generateWitness = async (inputs) => {
+      const buffer = fs.readFileSync(wasm);
+      const witnessCalculator = await wc(buffer);
+      const buff = await witnessCalculator.calculateWTNSBin(inputs, 0);
+      fs.writeFileSync(WITNESS_FILE, buff);
+    }
+    try {
+      console.log(typeof(board));
+      console.log(typeof(player));
+      const inputSignals = { board: board 
+        , player: senderOrReceiver
+        , startSquare: startSquare
+        , endSquare: endSquare
+        , startRank: startRank
+        , endRank: endRank
+        , lastBoardHash: lastBoardHash} // replace with your signals
+      await generateWitness(inputSignals)
+      const { proof, publicSignals } = await snarkjs.groth16.prove(zkey, WITNESS_FILE);  
+      console.log(proof);
+      console.log(publicSignals);
+      
+      const calls = await snarkjs.groth16.exportSolidityCallData(unstringifyBigInts(proof),unstringifyBigInts(publicSignals));
+      console.log(calls);
+      var args = JSON.parse("[" + calls + "]");
+      console.log(args);
+      args.push(publicSignals[0]);
+      res.status(200).send(args);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json(error);      
+    }
   });
-  app.get('/zksnark/circuit_final.zkey', function(req, res){
-    const file = `../pcs-project/public/zksnark/finishSetup/circuit_final.zkey`;
-    res.sendFile(path.resolve(file)); // Set disposition and send it.
+
+
+  app.post('/zksnark/finishSetup', async function (req, res){
+    const board = req.body.board;
+    const player = req.body.player;
+
+    const wc = require('../circom/finishSetup/finishSetup_js/witness_calculator');
+    const wasm = path.resolve('./circom/finishSetup/finishSetup_js/finishSetup.wasm');
+    const zkey = path.resolve('./circom/finishSetup/circuit_final.zkey');
+    //const INPUTS_FILE = '/tmp/inputs';
+    const WITNESS_FILE = '/tmp/witness';
+
+    const generateWitness = async (inputs) => {
+      const buffer = fs.readFileSync(wasm);
+      const witnessCalculator = await wc(buffer);
+      const buff = await witnessCalculator.calculateWTNSBin(inputs, 0);
+      fs.writeFileSync(WITNESS_FILE, buff);
+    }
+    try {
+      console.log(typeof(board));
+      console.log(typeof(player));
+      const inputSignals = { board: board 
+        , player: player} // replace with your signals
+      await generateWitness(inputSignals)
+      const { proof, publicSignals } = await snarkjs.groth16.prove(zkey, WITNESS_FILE);  
+      console.log(proof);
+      console.log(publicSignals);
+      
+      const calls = await snarkjs.groth16.exportSolidityCallData(unstringifyBigInts(proof),unstringifyBigInts(publicSignals));
+      console.log(calls);
+      let args = JSON.parse("[" + calls + "]");
+      console.log(args);
+      args.push(publicSignals[0]);
+      res.status(200).send(args);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json(error);      
+    }
   });
-  app.all('*',         invalid);
+  app.all('*',invalid);
   
 };
