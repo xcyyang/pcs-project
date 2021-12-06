@@ -225,34 +225,34 @@ template Move() {
     signal input player; // 0 for sender, 1 for reciever
     signal input startsquare[2];
     signal input endsquare[2];
-    signal input startrank;
     signal input endrank;
     signal input lastboardhash;
     signal output board_hash;
+    signal input mpc_result; // 1 for win, 2 for lost, 3 for tie
     signal output isInvalid;
     signal output test;
 
     var isInvalid_tmp = 0;
     // compute hash and check rule
     var newBoard[12][5];
-    for (var i=0;i<12;i++){
-        for (var j=0;j<5;j++){
+    for (var i = 0; i < 12; i++) {
+        for (var j = 0; j < 5; j++) {
             newBoard[i][j] = board[i][j];
         }
     }
 
-    //
-    component hasher = Pedersen(480);
     // compare hash
+    component hasher = Pedersen(480);
     var index = 0;
-    for (var i=0;i<12;i++){
-        for (var j=0;j<5;j++){
-            for (var w=0; w < 8; w++){
+    for (var i = 0; i < 12; i++) {
+        for (var j = 0; j < 5; j++) {
+            for (var w=0; w < 8; w++) {
                 hasher.in[index+w] <-- (board[i][j] >> w) & 1;
             }
             index=index+8;
-            }
         }
+    }
+
     component p2n1 = point2num();
     p2n1.x <== hasher.out[0];
     p2n1.y <== hasher.out[1];
@@ -261,8 +261,9 @@ template Move() {
         log(p2n1.out);
         log(6);
     }
+
     // ally check
-    if (board[endsquare[0]][endsquare[1]]!=12 && board[endsquare[0]][endsquare[1]]!=13){
+    if (board[endsquare[0]][endsquare[1]] != 12 && board[endsquare[0]][endsquare[1]] != 13) {
         isInvalid_tmp = 1;
         log(7);
     }
@@ -282,8 +283,8 @@ template Move() {
     var y1 = startsquare[1];
     var y2 = endsquare[1]; 
     
-    for (var i=0;i<12;i++){
-        for (var j=0;j<5;j++){
+    for (var i = 0; i < 12; i++) {
+        for (var j = 0; j < 5; j++) {
             getP.board[i][j] <== board[i][j];
         }
     }
@@ -297,169 +298,140 @@ template Move() {
     sub.square2[0] <== endsquare[0];
     sub.square2[1] <== endsquare[1];
 
-    if ((x1 == 0 || x1 == 11) && (y1==1||y1==3) || board[startsquare[0]][startsquare[1]] == 10) {
+    if ((x1 == 0 || x1 == 11) && (y1 == 1 || y1 == 3) || board[startsquare[0]][startsquare[1]] == 10) {
         //in the base or landmine
         isInvalid_tmp = 1;
         log(4);
     } else {
         if (onR1.out && onR2.out) {
-                // on Rail move
-                if (board[startsquare[0]][startsquare[1]] != 9 && x1 != x2 && y1 != y2){
-                    //other can not turn
+            // on Rail move
+            if (board[startsquare[0]][startsquare[1]] != 9 && x1 != x2 && y1 != y2) {
+                //other can not turn
+                isInvalid_tmp = 1;
+                log(5);
+            } else {
+                if (getP.out != 1) {
                     isInvalid_tmp = 1;
-                    log(5);
-                }else{
-
-                    if(getP.out != 1){
-                        isInvalid_tmp = 1;
-                        log(0);
-                    }else{
-                        if(board[x1][y1] != 9){
-                            // only straight move
-                            var tempsquare[2] = [x1, y1];
-                            if(x1==x2){
-                                if(y1>y2){
-                                    tempsquare[1] = tempsquare[1]-1;
-                                    while(tempsquare[1]!=y2){
-                                        if(board[tempsquare[0]][tempsquare[1]] != 13){
-                                            isInvalid_tmp = 1;
-                                            log(8);
-                                        }
-                                        tempsquare[1] = tempsquare[1]-1;
+                    log(0);
+                } else {
+                    if (board[x1][y1] != 9) {
+                        // only straight move
+                        var tempsquare[2] = [x1, y1];
+                        if (x1 == x2) {
+                            if (y1 > y2) {
+                                tempsquare[1] = tempsquare[1] - 1;
+                                while (tempsquare[1] != y2) {
+                                    if (board[tempsquare[0]][tempsquare[1]] != 13) {
+                                        isInvalid_tmp = 1;
+                                        log(8);
                                     }
-                                }else{
+                                    tempsquare[1] = tempsquare[1] - 1;
+                                }
+                            } else {
+                                tempsquare[1] = tempsquare[1] + 1;
+                                while (tempsquare[1] != y2) {
+                                    if (board[tempsquare[0]][tempsquare[1]] != 13) {
+                                        isInvalid_tmp = 1;
+                                        log(8);
+                                    }
                                     tempsquare[1] = tempsquare[1]+1;
-                                    while(tempsquare[1]!=y2){
-                                        if(board[tempsquare[0]][tempsquare[1]] != 13){
-                                            isInvalid_tmp = 1;
-                                            log(8);
-                                        }
-                                        tempsquare[1] = tempsquare[1]+1;
-                                    }    
-                                }
-                            }else{
-                                    if(x1>x2){
-                                        tempsquare[0] = tempsquare[0]-1;
-                                        while(tempsquare[0]!=x2){
-                                            if(board[tempsquare[0]][tempsquare[1]] != 13){
-                                                isInvalid_tmp = 1;
-                                                log(8);
-                                            }
-                                            tempsquare[0] = tempsquare[0]-1;
-                                        }
-                                    }else{
-                                        tempsquare[0] = tempsquare[0]+1;
-                                        while(tempsquare[0]!=x2){
-                                            if(board[tempsquare[0]][tempsquare[1]] != 13){
-                                                isInvalid_tmp = 1;
-                                                log(8);
-                                            }
-                                            tempsquare[0] = tempsquare[0]+1;
-                                        }
+                                }    
+                            }
+                        } else {
+                            if (x1 > x2) {
+                                tempsquare[0] = tempsquare[0] - 1;
+                                while (tempsquare[0] != x2) {
+                                    if (board[tempsquare[0]][tempsquare[1]] != 13) {
+                                        isInvalid_tmp = 1;
+                                        log(8);
                                     }
-                            }
-                        }
-                        if (endrank == 13){
-                            // just move
-                            newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
-                            newBoard[x1][y1] = 13;
-                        }else{
-                            // attack
-                            if (board[startsquare[0]][startsquare[1]] == 0 || endrank == 0 || endrank == board[startsquare[0]][startsquare[1]]){
-                                // bomb or tie
-                                newBoard[x2][y2] = 13;
-                                newBoard[x1][y1] = 13;
-                            }else if (endrank == 10){
-                                // step on the landmine 
-                                if (board[startsquare[0]][startsquare[1]] == 9){
-                                    // remove landmine
-                                    newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
-                                    newBoard[x1][y1] = 13;
-                                }else{
-                                    //boom
-                                    newBoard[x2][y2] = 13;
-                                    newBoard[x1][y1] = 13;
+                                    tempsquare[0] = tempsquare[0] - 1;
                                 }
-                            }else{
-                                //battle
-                                if(board[startsquare[0]][startsquare[1]] < endrank){
-                                    //win
-                                    newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
-                                    newBoard[x1][y1] = 13;
-                                }else{
-                                    //lose
-                                    newBoard[x2][y2] = 12;
-                                    newBoard[x1][y1] = 13;
+                            } else {
+                                tempsquare[0] = tempsquare[0] + 1;
+                                while (tempsquare[0]!=x2) {
+                                    if (board[tempsquare[0]][tempsquare[1]] != 13) {
+                                        isInvalid_tmp = 1;
+                                        log(8);
+                                    }
+                                    tempsquare[0] = tempsquare[0] + 1;
                                 }
                             }
                         }
                     }
+
+                    if (endrank == 13) {
+                        // just move
+                        newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
+                        newBoard[x1][y1] = 13;
+                    } else {
+                        // attack
+                        if (mpc_result == 1) {
+                            // win (include snapper remove landmine)
+                            newBoard[x1][y1] = 13;
+                            newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
+                        } else if (mpc_result == 2) {
+                            // lost
+                            newBoard[x1][y1] = 13;
+                            newBoard[x2][y2] = 12;
+                        } else if (mpc_result == 3) {
+                            // tie
+                            newBoard[x1][y1] = 13;
+                            newBoard[x2][y2] = 13;
+                        }
+                    }
                 }
-
-
-        }else{
-                // normal move
-                var distance = sub.out;
-                if (distance > 2 || distance ==0){
+            }
+        } else {
+            // normal move
+            var distance = sub.out;
+            if (distance > 2 || distance == 0) {
+                isInvalid_tmp = 1;
+                log(1);
+            } else if (distance == 2) {
+                //not straight
+                if (x1 == 0 || x1 == 11 || x2 == 0 || x2 == 11 || (x1 + x2) == 11) {
                     isInvalid_tmp = 1;
-                    log(1);
-                }else if (distance == 2){
-                    //not straight
-                    if (x1 == 0 || x1 == 11 || x2 == 0 || x2 == 11 || (x1 + x2)==11){
-                        isInvalid_tmp = 1;
-                        log(2);
-                    }
+                    log(2);
                 }
-               if (endrank == 13){
-                            // just move
-                            newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
-                            newBoard[x1][y1] = 13;
-                        }else{
-                            // attack
-                            if (board[startsquare[0]][startsquare[1]] == 0 || endrank == 0 || endrank == board[startsquare[0]][startsquare[1]]){
-                                // bomb or tie
-                                newBoard[x2][y2] = 13;
-                                newBoard[x1][y1] = 13;
-                            }else if (endrank == 10){
-                                // step on the landmine 
-                                if (board[startsquare[0]][startsquare[1]] == 9){
-                                    // remove landmine
-                                    newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
-                                    newBoard[x1][y1] = 13;
-                                }else{
-                                    //boom
-                                    newBoard[x2][y2] = 13;
-                                    newBoard[x1][y1] = 13;
-                                }
-                            }else{
-                                //battle
-                                if(board[startsquare[0]][startsquare[1]] < endrank){
-                                    //win
-                                    newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
-                                    newBoard[x1][y1] = 13;
-                                }else{
-                                    //lose
-                                    newBoard[x2][y2] = 12;
-                                    newBoard[x1][y1] = 13;
-                                }
-                            }
-                        }
+            }
+            
+            if (endrank == 13) {
+                // just move
+                newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
+                newBoard[x1][y1] = 13;
+            } else {
+                // attack
+                if (mpc_result == 1) {
+                    // win (include snapper remove landmine)
+                    newBoard[x1][y1] = 13;
+                    newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
+                } else if (mpc_result == 2) {
+                    // lost
+                    newBoard[x1][y1] = 13;
+                    newBoard[x2][y2] = 12;
+                } else if (mpc_result == 3) {
+                    // tie
+                    newBoard[x1][y1] = 13;
+                    newBoard[x2][y2] = 13;
+                }
+            }
         }
     }
-        // compute new hash
+    
+    // compute new hash
     component newhasher = Pedersen(480);
     index = 0;
-    for (var i=0;i<12;i++){
-        for (var j=0;j<5;j++){
-            for (var w=0; w < 8; w++){
+    for (var i = 0; i < 12; i++) {
+        for (var j = 0; j < 5; j++) {
+            for (var w = 0; w < 8; w++) {
                 newhasher.in[index+w] <-- (newBoard[i][j] >> w) & 1;
             }
             index=index+8;
-            }
         }
+    }
   
-
-    assert(isInvalid_tmp==0);
+    assert(isInvalid_tmp == 0);
     component p2n = point2num();
     p2n.x <== newhasher.out[0];
     p2n.y <== newhasher.out[1];
@@ -468,4 +440,4 @@ template Move() {
     test <== 3;
 }
 
-component main {public [player]} = Move();
+component main {public [player, mpc_result]} = Move();
