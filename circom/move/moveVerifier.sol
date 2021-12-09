@@ -68,7 +68,7 @@ library Pairing_Move {
             // Use "invalid" to make gas estimation work
             switch success case 0 { invalid() }
         }
-        require(success,"pairing-add-failed");
+        require(success,"pairing_MovePairing_Move-add-failed");
     }
     /// @return r the product of a point on G1 and a scalar, i.e.
     /// p == p.scalar_mul(1) and p.addition(p) == p.scalar_mul(2) for all points p.
@@ -84,14 +84,14 @@ library Pairing_Move {
             // Use "invalid" to make gas estimation work
             switch success case 0 { invalid() }
         }
-        require (success,"pairing-mul-failed");
+        require (success,"pairing_MovePairing_Move-mul-failed");
     }
-    /// @return the result of computing the pairing check
+    /// @return the result of computing the pairing_MovePairing_Move check
     /// e(p1[0], p2[0]) *  .... * e(p1[n], p2[n]) == 1
-    /// For example pairing([P1(), P1().negate()], [P2(), P2()]) should
+    /// For example pairing_MovePairing_Move([P1(), P1().negate()], [P2(), P2()]) should
     /// return true.
-    function pairing(G1Point[] memory p1, G2Point[] memory p2) internal view returns (bool) {
-        require(p1.length == p2.length,"pairing-lengths-failed");
+    function pairing_MovePairing_Move(G1Point[] memory p1, G2Point[] memory p2) internal view returns (bool) {
+        require(p1.length == p2.length,"pairing_MovePairing_Move-lengths-failed");
         uint elements = p1.length;
         uint inputSize = elements * 6;
         uint[] memory input = new uint[](inputSize);
@@ -112,21 +112,21 @@ library Pairing_Move {
             // Use "invalid" to make gas estimation work
             switch success case 0 { invalid() }
         }
-        require(success,"pairing-opcode-failed");
+        require(success,"pairing_MovePairing_Move-opcode-failed");
         return out[0] != 0;
     }
-    /// Convenience method for a pairing check for two pairs.
-    function pairingProd2(G1Point memory a1, G2Point memory a2, G1Point memory b1, G2Point memory b2) internal view returns (bool) {
+    /// Convenience method for a pairing_MovePairing_Move check for two pairs.
+    function pairing_MovePairing_MoveProd2(G1Point memory a1, G2Point memory a2, G1Point memory b1, G2Point memory b2) internal view returns (bool) {
         G1Point[] memory p1 = new G1Point[](2);
         G2Point[] memory p2 = new G2Point[](2);
         p1[0] = a1;
         p1[1] = b1;
         p2[0] = a2;
         p2[1] = b2;
-        return pairing(p1, p2);
+        return pairing_MovePairing_Move(p1, p2);
     }
-    /// Convenience method for a pairing check for three pairs.
-    function pairingProd3(
+    /// Convenience method for a pairing_MovePairing_Move check for three pairs.
+    function pairing_MovePairing_MoveProd3(
             G1Point memory a1, G2Point memory a2,
             G1Point memory b1, G2Point memory b2,
             G1Point memory c1, G2Point memory c2
@@ -139,10 +139,10 @@ library Pairing_Move {
         p2[0] = a2;
         p2[1] = b2;
         p2[2] = c2;
-        return pairing(p1, p2);
+        return pairing_MovePairing_Move(p1, p2);
     }
-    /// Convenience method for a pairing check for four pairs.
-    function pairingProd4(
+    /// Convenience method for a pairing_MovePairing_Move check for four pairs.
+    function pairing_MovePairing_MoveProd4(
             G1Point memory a1, G2Point memory a2,
             G1Point memory b1, G2Point memory b2,
             G1Point memory c1, G2Point memory c2,
@@ -158,7 +158,7 @@ library Pairing_Move {
         p2[1] = b2;
         p2[2] = c2;
         p2[3] = d2;
-        return pairing(p1, p2);
+        return pairing_MovePairing_Move(p1, p2);
     }
 }
 contract MoveVerifier {
@@ -194,10 +194,10 @@ contract MoveVerifier {
              8495653923123431417604973247489272438418190587263600148770280649306958101930]
         );
         vk.delta2 = Pairing_Move.G2Point(
-            [2698367038208789561672690273180571677979673162565454127763664715270282164991,
-             6095471944983891682226909027082219472205127029199199936000595008640680029647],
-            [3619924181436433206330614742191956340355617061133623415639730046217386131620,
-             9456542985960282349283948441651884149015538399974770246489036227223424829682]
+            [9507789049745359843224190799360769677806109542713108018641603911161946164445,
+             8248879687238002264627619680754429806683455357890287638588035991111388200809],
+            [1827387965531702619586764447755093331425715564675352405262704926854768412063,
+             7702818090875852149463309533500163959748334749872442859187939396258445807507]
         );
         vk.IC = new Pairing_Move.G1Point[](12);
         
@@ -273,7 +273,7 @@ contract MoveVerifier {
             vk_x = Pairing_Move.addition(vk_x, Pairing_Move.scalar_mul(vk.IC[i + 1], input[i]));
         }
         vk_x = Pairing_Move.addition(vk_x, vk.IC[0]);
-        if (!Pairing_Move.pairingProd4(
+        if (!Pairing_Move.pairing_MovePairing_MoveProd4(
             Pairing_Move.negate(proof.A), proof.B,
             vk.alfa1, vk.beta2,
             vk_x, vk.gamma2,

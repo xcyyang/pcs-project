@@ -276,8 +276,10 @@ template Move() {
     component sub = abSub();
     
     assert(player == 0 || player == 1);
-    assert(board[startsquare[0]][startsquare[1]] < 10);
-
+    if(player == 0){
+        assert(board[startsquare[0]][startsquare[1]] < 10);
+    }
+    
     onR1.square[0] <== startsquare[0];
     onR1.square[1] <== startsquare[1];
     onR2.square[0] <== endsquare[0];
