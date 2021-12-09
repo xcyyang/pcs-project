@@ -47,17 +47,18 @@ template abSub() {
     var y2 = square2[1];
     var i = 0;
     var j = 0;
-    if (x1 > x2){
+    
+    if (x1 > x2) {
         i = x1 - x2;
-    }  else{
+    } else {
         i = x2 - x1;
     }
-    if (y1 > y2){
+    if (y1 > y2) {
         j = y1 - y2;
-    }  else{
+    } else{
         j = y2 - y1;
     }
-    out <-- i+j;
+    out <-- i + j;
 }
 
 template findPath() {
@@ -87,8 +88,8 @@ template findPath() {
     //in the same line
     var avaliable = 0;
     var through = 1;
-    if(start[0]<5&&end[0]<5){
-        for(var i=0; i<11; i++){
+    if (start[0]<5&&end[0]<5){
+        for (var i = 0; i < 11; i++) {
             if ((line[0][i][0]==start[0] && line[0][i][1]==start[1])||(line[0][i][0]==end[0] && line[0][i][1]==end[1])){
                 avaliable = 1;
             }
@@ -100,8 +101,8 @@ template findPath() {
             }
         }
         //out <-- through;
-    }else if(start[0]>7&&end[0]>7){
-        for(var i=0; i<11; i++){
+    } else if (start[0]>7&&end[0]>7) {
+        for (var i=0; i<11; i++) {
             if ((line[1][i][0]==start[0] && line[1][i][1]==start[1])||(line[1][i][0]==end[0] && line[1][i][1]==end[1])){
                 avaliable = 1;
             }
@@ -233,6 +234,7 @@ template Move() {
     signal output test;
 
     var isInvalid_tmp = 0;
+    
     // compute hash and check rule
     var newBoard[12][5];
     for (var i = 0; i < 12; i++) {
@@ -272,12 +274,15 @@ template Move() {
     component onR2 = onRail();
     component getP = findPath();
     component sub = abSub();
-    assert(player==0||player==1);
-    assert(board[startsquare[0]][startsquare[1]]<10);
+    
+    assert(player == 0 || player == 1);
+    assert(board[startsquare[0]][startsquare[1]] < 10);
+
     onR1.square[0] <== startsquare[0];
     onR1.square[1] <== startsquare[1];
     onR2.square[0] <== endsquare[0];
     onR2.square[1] <== endsquare[1];
+
     var x1 = startsquare[0];
     var x2 = endsquare[0];
     var y1 = startsquare[1];
@@ -362,18 +367,36 @@ template Move() {
 
                     if (endrank == 13) {
                         // just move
-                        newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
                         newBoard[x1][y1] = 13;
+                        if (player == 0) {
+                            // sender
+                            newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
+                        } else if (player == 1) {
+                            // receiver
+                            newBoard[x2][y2] = 12;
+                        }
                     } else {
                         // attack
                         if (mpc_result == 1) {
                             // win (include snapper remove landmine)
                             newBoard[x1][y1] = 13;
-                            newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
+                            if (player == 0) {
+                                // sender
+                                newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
+                            } else if (player == 1) {
+                                // receiver
+                                newBoard[x2][y2] = 12;
+                            }
                         } else if (mpc_result == 2) {
                             // lost
                             newBoard[x1][y1] = 13;
-                            newBoard[x2][y2] = 12;
+                            if (player == 0) {
+                                // sender
+                                newBoard[x2][y2] = 12;
+                            } else if (player == 1) {
+                                // receiver
+                                newBoard[x2][y2] = board[endsquare[0]][endsquare[1]];
+                            }
                         } else if (mpc_result == 3) {
                             // tie
                             newBoard[x1][y1] = 13;
@@ -398,18 +421,36 @@ template Move() {
             
             if (endrank == 13) {
                 // just move
-                newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
                 newBoard[x1][y1] = 13;
+                if (player == 0) {
+                    // sender
+                    newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
+                } else if (player == 1) {
+                    // receiver
+                    newBoard[x2][y2] = 12;
+                }
             } else {
                 // attack
                 if (mpc_result == 1) {
                     // win (include snapper remove landmine)
                     newBoard[x1][y1] = 13;
-                    newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
+                    if (player == 0) {
+                        // sender
+                        newBoard[x2][y2] = board[startsquare[0]][startsquare[1]];
+                    } else if (player == 1) {
+                        // receiver
+                        newBoard[x2][y2] = 12;
+                    }
                 } else if (mpc_result == 2) {
                     // lost
                     newBoard[x1][y1] = 13;
-                    newBoard[x2][y2] = 12;
+                    if (player == 0) {
+                        // sender
+                        newBoard[x2][y2] = 12;
+                    } else if (player == 1) {
+                        // receiver
+                        newBoard[x2][y2] = board[endsquare[0]][endsquare[1]];
+                    }
                 } else if (mpc_result == 3) {
                     // tie
                     newBoard[x1][y1] = 13;
