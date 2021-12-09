@@ -202,8 +202,9 @@ exports.attach = function(app, db) {
     const senderOrReceiver = req.body.senderOrReceiver; // 0 for sender, 1 for receiver
     const startSquare = req.body.startSquare; // [2]
     const endSquare = req.body.endSquare; // [2]
-    const startRank = req.body.startRank; // int
+    //const startRank = req.body.startRank; // int
     const endRank = req.body.endRank; // int 
+    const mpc_result = req.body.mpc_result; // int
     const lastBoardHash = req.body.lastBoardHash;   // BigInt
 
 
@@ -220,16 +221,22 @@ exports.attach = function(app, db) {
       fs.writeFileSync(WITNESS_FILE, buff);
     }
     try {
-      console.log(typeof(board));
-      console.log(typeof(player));
+      console.log(board);
+      console.log(senderOrReceiver);
+      console.log(startSquare);
+      console.log(endSquare);
+      console.log(endRank);
+      console.log(mpc_result);
+      console.log(lastBoardHash)
+      //console.log(typeof(player));
       const inputSignals = { board: board 
         , player: senderOrReceiver
-        , startSquare: startSquare
-        , endSquare: endSquare
-        , startRank: startRank
-        , endRank: endRank
-        , lastBoardHash: lastBoardHash} // replace with your signals
-      await generateWitness(inputSignals)
+        , startsquare: startSquare
+        , endsquare: endSquare
+        , endrank: endRank
+        , mpc_result: mpc_result
+        , lastboardhash: lastBoardHash} // replace with your signals
+      await generateWitness(inputSignals);
       const { proof, publicSignals } = await snarkjs.groth16.prove(zkey, WITNESS_FILE);  
       console.log(proof);
       console.log(publicSignals);
@@ -268,7 +275,7 @@ exports.attach = function(app, db) {
       console.log(typeof(player));
       const inputSignals = { board: board 
         , player: player} // replace with your signals
-      await generateWitness(inputSignals)
+      await generateWitness(inputSignals);
       const { proof, publicSignals } = await snarkjs.groth16.prove(zkey, WITNESS_FILE);  
       console.log(proof);
       console.log(publicSignals);

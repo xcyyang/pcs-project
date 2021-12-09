@@ -30,10 +30,10 @@ function compressBoard(playerColor,boardState){
   console.log(JSON.stringify(compressBoard));
   return compressBoard;
 }
-function decompressBoard(){
+// function decompressBoard(){
 
-  return boardState;
-}
+//   return boardState;
+// }
 
 var Client = (function(window) {
     var game = null;
@@ -72,6 +72,36 @@ var Client = (function(window) {
     /**
     * Initialize the UI
     */
+    async function getMoveProof(moveString, isNormalMove, isSender, mpcResult){
+      const startSquareString = moveString.split(" - ")[0];
+      const endSquareString = moveString.split(" - ")[1];
+      console.log(startSquareString);
+      console.log(endSquareString);
+    
+      const board = (compressBoard(playerColor,game.board.boardState));
+      const senderOrReceiver = isSender?0:1;
+      const startSquare = [parseInt(startSquareString.substring(1),10)-1,startSquareString[0].charCodeAt(0)-'a'.charCodeAt(0)];
+      const endSquare = [parseInt(endSquareString.substring(1),10)-1,endSquareString[0].charCodeAt(0)-'a'.charCodeAt(0)];
+      console.log(startSquare);
+      console.log(endSquare);
+      const endRank = isNormalMove?13:12;
+      const mpc_result = mpcResult;
+      const lastBoardHash = boardHash;
+      var proofAndPublicSignals = null;
+      proofAndPublicSignals =  await $.ajax({
+        type: 'POST',
+        url: '/zksnark/move',
+        data: JSON.stringify({board,senderOrReceiver,
+        startSquare,endSquare,endRank,mpc_result,lastBoardHash}),
+        success: function(result) { 
+        },
+        contentType: "application/json",
+        dataType: 'json'
+      });
+      console.log((proofAndPublicSignals));
+      return proofAndPublicSignals;
+    }
+
     var init = async function(config)
     {   
         gameID      = config.gameID;
@@ -96,9 +126,6 @@ var Client = (function(window) {
 
         gameClasses = "red blue rank0 rank1 rank2 rank3 rank4 rank5 rank6 rank7 rank8 rank9 rank10 rank11 not-moved empty selected " +
                       "valid-move valid-attack valid-swap last-move";
-        // TODO Smart contract 
-        // Create socket connection
-        //socket = io.connect();
 
         // Define board based on player's perspective
         assignSquares();
@@ -115,36 +142,7 @@ var Client = (function(window) {
         // Create a default game board
         var params = {playerColor: playerColor};
         game = new Game (params);
-        // Get past event
-        // var results = await JunqiContract.getPastEvents('Join',{
-        //   filter:{gameID:gameID},
-        //   fromBlock: 0,
-        //   toBlock: 'latest'
-        // }, function(error,events){
-        //   if(events){
-        //     console.log("get past join events");
-        //     console.log(events);
-        //     for (let i=0;i<events.length;i++){
-        //       let playerColor_tmp = events[i]['returnValues']['index']=='0'? 'blue':'red';
-        //       game.addPlayer({playerColor:playerColor_tmp});
-        //     }
-        //   }
-        // });
-
-        // results = await JunqiContract.getPastEvents('FinishSetup',{
-        //   filter:{gameID:gameID},
-        //   fromBlock: 0,
-        //   toBlock: 'latest'
-        // }, function(error,events){
-        //   if(events){
-        //     console.log("get past FinishSetup events");
-        //     console.log(events);
-        //     for (let i=0;i<events.length;i++){
-        //       let playerColor_tmp = events[i]['returnValues']['index']=='0'? 'blue':'red';
-        //       game.finishSetup({playerColor:playerColor_tmp});
-        //     }
-        //   }
-        // });
+        
         // Update UI
         gameState = game;
         update();
@@ -174,6 +172,7 @@ var Client = (function(window) {
             update();
           } 
         });
+
         expectedMoveEventID = 0;
         JunqiContract.events.Move({filter:{gameID: gameID},fromBlock:"latest"},async function(error, event){
           if(event!=null&&event['returnValues']['gameID']==gameID&&event['returnValues']['id']==parseInt(expectedMoveEventID,10)){
@@ -183,76 +182,48 @@ var Client = (function(window) {
             let isMyself = (currentPlayer==event['returnValues']['turn'])?true:false;
             if(event['returnValues']['rankString']=="-1"){
               console.log(isMyself)
+              if(!isMyself){
+                const proofAndPublicSignals = await getMoveProof(event['returnValues']['moveString'],1,0,1);
+                boardHash = proofAndPublicSignals[4];
+                await JunqiContract.methods.move(event['returnValues']['moveString']
+                  , "-1"
+                  , gameID
+                  , proofAndPublicSignals[0], proofAndPublicSignals[1], proofAndPublicSignals[2], proofAndPublicSignals[3]).send({from: currentAccount});
+              }
               game.move(event['returnValues']['moveString'],isMyself);
-
-              // generate proof()
-              // send post
-              // 
-              await JunqiContract.methods.proveMove(gameID).send({from:currentAccount});
-
               gameState=game;
               console.log(gameState);
               update();
             }else{
               if(!isMyself){
-                console.log("waitOpponentsRank:");
-                console.log(waitOpponentsRank);
-                if(waitOpponentsRank){
-                  let endSquare = event['returnValues']['moveString'].split(" ")[2];
-                  let opponentColor = (playerColor=='blue')?"red":"blue";
-                  let opponentPiece = new Piece(opponentColor[0],event['returnValues']['rankString']);
-                  
-                  // generate proof()
-                  // send post
-                  // 
-                  await JunqiContract.methods.proveMove(gameID).send({from:currentAccount});
-                  
-                  game.board.placePieceAtSquare(endSquare,opponentPiece);
-                  game.move(event['returnValues']['moveString'],isMyself);
-                  gameState=game;
-                  update();
-                  waitOpponentsRank = false;
-                }else{
-                  // Update opponent rank
-                  console.log("Update attack")
-                  let startSquare = event['returnValues']['moveString'].split(" ")[0];
-                  let endSquare = event['returnValues']['moveString'].split(" ")[2];
-                  let opponentColor = (playerColor=='blue')?"red":"blue";
-                  let opponentPiece = new Piece(opponentColor[0],event['returnValues']['rankString']);
-                  game.board.placePieceAtSquare(startSquare,opponentPiece);
-                  // Send rank to opponent
-                  console.log("Send rank to opponent");
-                  console.log(endSquare)
-                  let pieceSendToOpponent = game.board.getPieceAtSquare(endSquare);
-                  console.log(pieceSendToOpponent);
-                  
-                  // generate proof()
-                  // send post
-                  // 
-                  await JunqiContract.methods.proveMove(gameID).send({from:currentAccount});
+                // TODO 
+                // Send rank through MPC to sender
+                
+                // Receive result of MPC
+                
+                // Send proof to Smart Contract 
 
-                  await JunqiContract.methods.move(event['returnValues']['moveString']
-                    , pieceSendToOpponent.rankStr
-                    , gameID).send({from: currentAccount});
-                  // Update
-                  game.move(event['returnValues']['moveString'],isMyself);
-                  gameState=game;
-                  update();
-                  // 
-                }
+                // Update UI (need to modify, in order to receive mpc_result）
+                game.move(event['returnValues']['moveString'],isMyself);
+                gameState=game;
+                update();
+              }else{
+                // TODO
+                // Execute eveluator of MPC
+
+                // Receive result of MPC
+
+                // Send proof to Smart Contract
+
+                // Update UI (need to modify, in order to receive mpc_result )
+                game.move(event['returnValues']['moveString'],isMyself);
+                gameState=game;
+                update();
               }
             }
           } 
         });
     };
-    // Subscribe Join event
-    // config.JunqiContract.events.Join({filter:{gameID: gameID},fromBlock:0},function(error, event){ console.log(event);})
-    // .on('data',function(event){
-    //   var playerColor = event[i]['returnValues']['index']? 'blue':'red';
-    //   game.addPlayer({playerColor:playerColor});
-    //   gameState = game;
-    //   update();
-    // });
 
     var generateBoardCSS = function(board) {
       // Dynamically create board because most of the rows and columns are the same
@@ -400,11 +371,18 @@ var Client = (function(window) {
         let moveStringAndRankString = generateMoveString(ev.target, '-');
         // Send move message to Ethereum
         console.log(moveStringAndRankString);
+        const proofAndPublicSignals = await getMoveProof(moveStringAndRankString.moveString,1,1,1);
+        const a = proofAndPublicSignals[0];
+        const b = proofAndPublicSignals[1];
+        const c = proofAndPublicSignals[2];
+        const input = proofAndPublicSignals[3];
+
+        boardHash = proofAndPublicSignals[4];
+
         await JunqiContract.methods.move(moveStringAndRankString.moveString
                                   , "-1"
-                                  , gameID).send({from: currentAccount});
-        //messages.empty();
-        //socket.emit('move', {gameID: gameID, move: m});
+                                  , gameID
+                                  , a, b, c, input).send({from: currentAccount});
     });
 
     // Attack the opponent's piece
@@ -412,13 +390,12 @@ var Client = (function(window) {
         let moveStringAndRankString = generateMoveString(ev.target, 'x');
         
         // Send move message to Ethereum
-        console.log(moveStringAndRankString); 
-        JunqiContract.methods.move(moveStringAndRankString.moveString
-                                  , moveStringAndRankString.rankString
-                                  , gameID).send({from: currentAccount});
-        waitOpponentsRank = true;
-        // messages.empty();
-        // socket.emit('move', {gameID: gameID, move: m});
+        console.log(moveStringAndRankString);
+
+        // JunqiContract.methods.move(moveStringAndRankString.moveString
+        //                           , moveStringAndRankString.rankString
+        //                           , gameID).send({from: currentAccount});
+
     });
 
     //Swap pieces
