@@ -6,9 +6,9 @@
 6,6,16,main.startsquare[1]
 7,7,16,main.endsquare[0]
 8,8,16,main.endsquare[1]
-9,9,16,main.startrank
-10,10,16,main.endrank
-11,11,16,main.lastboardhash
+9,9,16,main.endrank
+10,10,16,main.lastboardhash
+11,11,16,main.mpc_result
 12,12,16,main.board[0][0]
 13,13,16,main.board[0][1]
 14,14,16,main.board[0][2]

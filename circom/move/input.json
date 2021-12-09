@@ -14,9 +14,9 @@
     [12, 12, 12, 12, 12]
   ],
   "player": 0,
-  "startsquare": [5, 0],
-  "endsquare": [6, 0],
-  "endrank": [12],
-  "lastboardhash": "1234",
+  "startsquare": [2, 2],
+  "endsquare": [2, 3],
+  "endrank": 13,
+  "lastboardhash": "18976057462875189850514270264705125109756608100641619312062269363538046153912",
   "mpc_result": 1
 }

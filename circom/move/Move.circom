@@ -440,4 +440,4 @@ template Move() {
     test <== 3;
 }
 
-component main {public [player, mpc_result]} = Move();
+component main {public [player, mpc_result, startsquare, endsquare, endrank, lastboardhash]} = Move();
