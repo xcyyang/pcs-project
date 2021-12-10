@@ -117,7 +117,7 @@ Game.prototype.finishSetup = function(playerData)
  * Apply move and regenerate game state.
  * Returns true on success and false on failure.
  */
-Game.prototype.move = function(moveString,isMyself)
+Game.prototype.move = function(moveString,isMyself,mpcResult)
 {
     if (this.status === STATUS_PENDING) {
         var validSwap = _.findWhere(this.validSwap, parseMoveString(moveString));
@@ -152,7 +152,7 @@ Game.prototype.move = function(moveString,isMyself)
     // since each unit's rank is hidden from the other player
     var evaluatedMove = validMove;
     if (validMove.type === "attack") {
-      evaluatedMove = this.board.evaluateMove(validMove.startSquare, validMove.endSquare);
+      evaluatedMove = this.board.evaluateMove(validMove.startSquare, validMove.endSquare, mpcResult);
       if (!evaluatedMove) {
         return false;
       }

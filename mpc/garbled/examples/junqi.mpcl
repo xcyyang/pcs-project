@@ -15,7 +15,7 @@ func main(a, b int64) int {
         // step on the landmine 
         if a == 9 {
             // snapper remove landmine
-            return 1
+            return 2
         } else {
             // boom
             return 3
@@ -24,10 +24,10 @@ func main(a, b int64) int {
         // battle
         if a < b {
             // win
-            return 1
+            return 2
         } else {
             // lose
-            return 2
+            return 1
         }
     }
 }

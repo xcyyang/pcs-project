@@ -48,7 +48,7 @@ contract Junqi {
 
   event GameIDs(address indexed from, uint gameID);
   event Move(string moveString,string rankString, int8 turn, uint gameID, uint64 id);
-
+  event Win(int8 player, uint gameID);
 
   mapping(uint => uint) public gameList;
   mapping(uint => Game) public games;
@@ -234,9 +234,15 @@ contract Junqi {
         game.wait_attack_move_proof = 1;
       }else{
         if(msg.sender == game.p1){
-          require(moveVerifierAndSavePublicSignal(0, gameID, a, b, c, input)==true); 
+          require(moveVerifierAndSavePublicSignal(0, gameID, a, b, c, input)==true);
+          if(input[2]==1){
+            emit Win(1,gameID);
+          }
         }else{
           require(moveVerifierAndSavePublicSignal(1, gameID, a, b, c, input)==true);
+          if(input[2]==1){
+            emit Win(0,gameID);
+          }
         }
         if (proof.wait_player1_proof == false&& proof.wait_player2_proof == false){
           require(compareTwoProofs(gameID)==true);
@@ -244,8 +250,5 @@ contract Junqi {
         }
       }
     }
-  }
-  function checkGameEnd() internal{
-
   }
 }

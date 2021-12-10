@@ -1,6 +1,6 @@
 1,1,16,main.board_hash
 2,2,16,main.isInvalid
-3,3,16,main.test
+3,3,16,main.win
 4,4,16,main.player
 5,5,16,main.startsquare[0]
 6,6,16,main.startsquare[1]

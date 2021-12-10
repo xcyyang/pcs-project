@@ -73,18 +73,18 @@ var Client = (function(window) {
     * Initialize the UI
     */
     async function getMoveProof(moveString, isNormalMove, isSender, mpcResult){
-      const startSquareString = moveString.split(" - ")[0];
-      const endSquareString = moveString.split(" - ")[1];
+      const startSquareString = moveString.split(" ")[0];
+      const endSquareString = moveString.split(" ")[2];
       console.log(startSquareString);
       console.log(endSquareString);
     
       const board = (compressBoard(playerColor,game.board.boardState));
-      const senderOrReceiver = isSender?0:1;
+      const senderOrReceiver = (isSender==1)?0:1;
       const startSquare = [parseInt(startSquareString.substring(1),10)-1,startSquareString[0].charCodeAt(0)-'a'.charCodeAt(0)];
       const endSquare = [parseInt(endSquareString.substring(1),10)-1,endSquareString[0].charCodeAt(0)-'a'.charCodeAt(0)];
       console.log(startSquare);
       console.log(endSquare);
-      const endRank = isNormalMove?13:12;
+      const endRank = (isNormalMove==1)?13:12;
       const mpc_result = mpcResult;
       const lastBoardHash = boardHash;
       var proofAndPublicSignals = null;
@@ -100,6 +100,47 @@ var Client = (function(window) {
       });
       console.log((proofAndPublicSignals));
       return proofAndPublicSignals;
+    }
+    async function getMPCResult(moveString,isEvaluator){
+      if(isEvaluator==1){
+        const startSquare = moveString.split(" x ")[0];
+        let piece = game.board.getPieceAtSquare(startSquare);
+        const startRank = piece.rankStr;
+        try {
+          const mpcResult =  await $.ajax({
+            type: 'POST',
+            url: '/mpc/evaluator',
+            data: JSON.stringify({startRank}),
+            success: function(result) { 
+            },
+            contentType: "application/json"
+            //dataType: 'json'
+          });
+          console.log(mpcResult.charAt(mpcResult.length-2));
+          return mpcResult.charAt(mpcResult.length-2);  
+        } catch (error) {
+          console.log(error);
+        }
+      }else{
+        const endSquare = moveString.split(" x ")[1];
+        let piece = game.board.getPieceAtSquare(endSquare);
+        const endRank = piece.rankStr;
+        try {
+          const mpcResult =  await $.ajax({
+            type: 'POST',
+            url: '/mpc/garbler',
+            data: JSON.stringify({endRank}),
+            success: function(result) { 
+            },
+            contentType: "application/json"
+            //dataType: 'json'
+          });
+          console.log(mpcResult.charAt(mpcResult.length-2));
+          return mpcResult.charAt(mpcResult.length-2);  
+        } catch (error) {
+          console.log(error);
+        }
+      }
     }
 
     var init = async function(config)
@@ -173,9 +214,24 @@ var Client = (function(window) {
           } 
         });
 
+        JunqiContract.events.Win({filter:{gameID: gameID},fromBlock:0},function(error, event){
+          if(event!=null&&event['returnValues']['gameID']==gameID){
+            console.log(event);
+            let winnerColor = event['returnValues']['player']=='0'? 'blue':'red';
+            console.log("win");
+            game.status = 'checkmate';
+            _.each(game.players, function(p) {
+              console.log(p);
+              p.inCheck = p.color==winnerColor?false:true;
+            }, this);
+            gameState=game;
+            update();
+          } 
+        });
+
         expectedMoveEventID = 0;
         JunqiContract.events.Move({filter:{gameID: gameID},fromBlock:"latest"},async function(error, event){
-          if(event!=null&&event['returnValues']['gameID']==gameID&&event['returnValues']['id']==parseInt(expectedMoveEventID,10)){
+          if(event!=null&&event['returnValues']['gameID']==gameID&&event['returnValues']['id']==expectedMoveEventID){
             console.log(event);
             expectedMoveEventID+=1;
             let currentPlayer = (playerColor=='blue')?"-1":"1";
@@ -190,7 +246,7 @@ var Client = (function(window) {
                   , gameID
                   , proofAndPublicSignals[0], proofAndPublicSignals[1], proofAndPublicSignals[2], proofAndPublicSignals[3]).send({from: currentAccount});
               }
-              game.move(event['returnValues']['moveString'],isMyself);
+              game.move(event['returnValues']['moveString'],isMyself,0);
               gameState=game;
               console.log(gameState);
               update();
@@ -198,25 +254,33 @@ var Client = (function(window) {
               if(!isMyself){
                 // TODO 
                 // Send rank through MPC to sender
-                
+                const mpcResult = await getMPCResult(event['returnValues']['moveString'],0);
                 // Receive result of MPC
-                
+                const proofAndPublicSignals = await getMoveProof(event['returnValues']['moveString'],0,0,parseInt(mpcResult,10));
                 // Send proof to Smart Contract 
-
+                boardHash = proofAndPublicSignals[4];
+                await JunqiContract.methods.move(event['returnValues']['moveString']
+                  , "12"
+                  , gameID
+                  , proofAndPublicSignals[0], proofAndPublicSignals[1], proofAndPublicSignals[2], proofAndPublicSignals[3]).send({from: currentAccount});
                 // Update UI (need to modify, in order to receive mpc_result）
-                game.move(event['returnValues']['moveString'],isMyself);
+                game.move(event['returnValues']['moveString'],isMyself, parseInt(mpcResult,10));
                 gameState=game;
                 update();
               }else{
                 // TODO
                 // Execute eveluator of MPC
-
+                const mpcResult = await getMPCResult(event['returnValues']['moveString'],1);
                 // Receive result of MPC
-
+                const proofAndPublicSignals = await getMoveProof(event['returnValues']['moveString'],0,1,parseInt(mpcResult,10));
                 // Send proof to Smart Contract
-
+                boardHash = proofAndPublicSignals[4];
+                await JunqiContract.methods.move(event['returnValues']['moveString']
+                  , "12"
+                  , gameID
+                  , proofAndPublicSignals[0], proofAndPublicSignals[1], proofAndPublicSignals[2], proofAndPublicSignals[3]).send({from: currentAccount});
                 // Update UI (need to modify, in order to receive mpc_result )
-                game.move(event['returnValues']['moveString'],isMyself);
+                game.move(event['returnValues']['moveString'],isMyself, parseInt(mpcResult,10));
                 gameState=game;
                 update();
               }
@@ -392,9 +456,14 @@ var Client = (function(window) {
         // Send move message to Ethereum
         console.log(moveStringAndRankString);
 
-        // JunqiContract.methods.move(moveStringAndRankString.moveString
-        //                           , moveStringAndRankString.rankString
-        //                           , gameID).send({from: currentAccount});
+        JunqiContract.methods.move(moveStringAndRankString.moveString
+                                   , moveStringAndRankString.rankString
+                                  , gameID
+                                  , ["0x0","0x0"]
+                                  ,[["0x0","0x0"],["0x0","0x0"]]
+                                  , ["0x0","0x0"]
+                                  ,["0x0","0x0","0x0","0x0","0x0","0x0","0x0","0x0","0x0","0x0","0x0"])
+                                  .send({from: currentAccount});
 
     });
 
@@ -404,7 +473,7 @@ var Client = (function(window) {
 
         messages.empty();
         var data = {gameID: gameID, move: m}
-        var result = game.move(data.move,true);
+        var result = game.move(data.move,true,0);
         gameState = game;
         update();
         //socket.emit('move', {gameID: gameID, move: m});
@@ -450,13 +519,13 @@ var Client = (function(window) {
 
     // Forfeit game
     container.on('click', '#forfeit', function(ev) {
-        showForfeitPrompt(function(confirmed) {
-            if (confirmed)
-            {
-              messages.empty();
-              socket.emit('forfeit', gameID);
-            }
-        });
+        // showForfeitPrompt(function(confirmed) {
+        //     if (confirmed)
+        //     {
+        //       messages.empty();
+        //       socket.emit('forfeit', gameID);
+        //     }
+        // });
 
         });
     };

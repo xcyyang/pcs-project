@@ -2,6 +2,9 @@
 var path = require('path');
 const snarkjs = require('snarkjs')
 const fs = require('fs')
+const { exec } = require("child_process");
+const util = require('util')
+const exec_prom = util.promisify(exec);
 
 
 function unstringifyBigInts(o) {
@@ -212,7 +215,13 @@ exports.attach = function(app, db) {
     const wasm = path.resolve('./circom/move/Move_js/Move.wasm');
     const zkey = path.resolve('./circom/move/circuit_final.zkey');
     //const INPUTS_FILE = '/tmp/inputs';
-    const WITNESS_FILE = '/tmp/witness';
+    var WITNESS_FILE = null;
+    if(senderOrReceiver == 0){
+      WITNESS_FILE = '/tmp/witness_0';
+    }else{
+      WITNESS_FILE = '/tmp/witness_1';
+    }
+    
 
     const generateWitness = async (inputs) => {
       const buffer = fs.readFileSync(wasm);
@@ -291,6 +300,42 @@ exports.attach = function(app, db) {
       res.status(500).json(error);      
     }
   });
+
+  app.post('/mpc/evaluator', async function (req, res){
+    const startRank = req.body.startRank;
+    var path = '/home/yxcy/Desktop/pcs-project/mpc/garbled/garbled';
+    //var prog = path;
+    //var args = ['-e', '-i', startRank, path + '../mpc/garbled/examples/junqi.mpcl'];
+    const { stdout, stderr } = await exec_prom(path+ ' -e -i '+ startRank+ ' /home/yxcy/Desktop/pcs-project/mpc/garbled/examples/junqi.mpcl');
+    if (stderr) {
+      console.error(`error: ${stderr}`);
+      res.status(500).json(error);
+      return;
+    }
+    console.log(`${stdout}`);
+    const result = `${stdout}`
+    res.status(200).send(result);
+  });
+  app.post('/mpc/garbler', async function (req,res){
+    const endRank = req.body.endRank;
+    var path = '/home/yxcy/Desktop/pcs-project/mpc/garbled/garbled';
+    //var prog = path;
+    //var args = ['-i', endRank, path + '../mpc/garbled/examples/junqi.mpcl'];
+    var result = null;
+    while(1){
+      const { stdout, stderr } = await exec_prom(path+ ' -i '+ endRank+ ' /home/yxcy/Desktop/pcs-project/mpc/garbled/examples/junqi.mpcl');
+      if (stderr) {
+        console.error(`error: ${stderr}`);
+        //res.status(500).json(error);
+        continue;
+      }else{
+        console.log(`${stdout}`);
+        result = `${stdout}`;
+        break;
+      }
+    }
+    res.status(200).send(result);
+  }); 
   app.all('*',invalid);
   
 };

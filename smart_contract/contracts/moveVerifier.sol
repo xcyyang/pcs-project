@@ -68,7 +68,7 @@ library Pairing_Move {
             // Use "invalid" to make gas estimation work
             switch success case 0 { invalid() }
         }
-        require(success,"pairing_MovePairing_Move-add-failed");
+        require(success,"pairing_Move-add-failed");
     }
     /// @return r the product of a point on G1 and a scalar, i.e.
     /// p == p.scalar_mul(1) and p.addition(p) == p.scalar_mul(2) for all points p.
@@ -84,14 +84,14 @@ library Pairing_Move {
             // Use "invalid" to make gas estimation work
             switch success case 0 { invalid() }
         }
-        require (success,"pairing_MovePairing_Move-mul-failed");
+        require (success,"pairing_Move-mul-failed");
     }
-    /// @return the result of computing the pairing_MovePairing_Move check
+    /// @return the result of computing the pairing_Move check
     /// e(p1[0], p2[0]) *  .... * e(p1[n], p2[n]) == 1
-    /// For example pairing_MovePairing_Move([P1(), P1().negate()], [P2(), P2()]) should
+    /// For example pairing_Move([P1(), P1().negate()], [P2(), P2()]) should
     /// return true.
-    function pairing_MovePairing_Move(G1Point[] memory p1, G2Point[] memory p2) internal view returns (bool) {
-        require(p1.length == p2.length,"pairing_MovePairing_Move-lengths-failed");
+    function pairing_Move(G1Point[] memory p1, G2Point[] memory p2) internal view returns (bool) {
+        require(p1.length == p2.length,"pairing_Move-lengths-failed");
         uint elements = p1.length;
         uint inputSize = elements * 6;
         uint[] memory input = new uint[](inputSize);
@@ -112,21 +112,21 @@ library Pairing_Move {
             // Use "invalid" to make gas estimation work
             switch success case 0 { invalid() }
         }
-        require(success,"pairing_MovePairing_Move-opcode-failed");
+        require(success,"pairing_Move-opcode-failed");
         return out[0] != 0;
     }
-    /// Convenience method for a pairing_MovePairing_Move check for two pairs.
-    function pairing_MovePairing_MoveProd2(G1Point memory a1, G2Point memory a2, G1Point memory b1, G2Point memory b2) internal view returns (bool) {
+    /// Convenience method for a pairing_Move check for two pairs.
+    function pairing_MoveProd2(G1Point memory a1, G2Point memory a2, G1Point memory b1, G2Point memory b2) internal view returns (bool) {
         G1Point[] memory p1 = new G1Point[](2);
         G2Point[] memory p2 = new G2Point[](2);
         p1[0] = a1;
         p1[1] = b1;
         p2[0] = a2;
         p2[1] = b2;
-        return pairing_MovePairing_Move(p1, p2);
+        return pairing_Move(p1, p2);
     }
-    /// Convenience method for a pairing_MovePairing_Move check for three pairs.
-    function pairing_MovePairing_MoveProd3(
+    /// Convenience method for a pairing_Move check for three pairs.
+    function pairing_MoveProd3(
             G1Point memory a1, G2Point memory a2,
             G1Point memory b1, G2Point memory b2,
             G1Point memory c1, G2Point memory c2
@@ -139,10 +139,10 @@ library Pairing_Move {
         p2[0] = a2;
         p2[1] = b2;
         p2[2] = c2;
-        return pairing_MovePairing_Move(p1, p2);
+        return pairing_Move(p1, p2);
     }
-    /// Convenience method for a pairing_MovePairing_Move check for four pairs.
-    function pairing_MovePairing_MoveProd4(
+    /// Convenience method for a pairing_Move check for four pairs.
+    function pairing_MoveProd4(
             G1Point memory a1, G2Point memory a2,
             G1Point memory b1, G2Point memory b2,
             G1Point memory c1, G2Point memory c2,
@@ -158,7 +158,7 @@ library Pairing_Move {
         p2[1] = b2;
         p2[2] = c2;
         p2[3] = d2;
-        return pairing_MovePairing_Move(p1, p2);
+        return pairing_Move(p1, p2);
     }
 }
 contract MoveVerifier {
@@ -194,71 +194,71 @@ contract MoveVerifier {
              8495653923123431417604973247489272438418190587263600148770280649306958101930]
         );
         vk.delta2 = Pairing_Move.G2Point(
-            [9507789049745359843224190799360769677806109542713108018641603911161946164445,
-             8248879687238002264627619680754429806683455357890287638588035991111388200809],
-            [1827387965531702619586764447755093331425715564675352405262704926854768412063,
-             7702818090875852149463309533500163959748334749872442859187939396258445807507]
+            [4647194463152039759770586171737534964753623259669742472403050984099999389375,
+             20847927824277012033214260493254242102710870988602646720332890460521282975058],
+            [11676254782581297069120302014998922842714243391122331035912839643013892179240,
+             5863505568748562526643693972827615478654428908204150194189070277270197060021]
         );
         vk.IC = new Pairing_Move.G1Point[](12);
         
         vk.IC[0] = Pairing_Move.G1Point( 
-            21846067743363755585052463081292001187886199734383563963073264117853548827807,
-            13379337416701304957118441129959186315457894909920109686796101666636076601476
+            9909315554360084959565400888727200043716449692528803048866969032994949883478,
+            18971600622155684617763336613107362524382142106499384417819975590921242584486
         );                                      
         
         vk.IC[1] = Pairing_Move.G1Point( 
+            47898088849578892388805598307291063174374069845193037083419628275059629809,
+            1136290532710189296397225193882652277817360269557834262922532458247818696837
+        );                                      
+        
+        vk.IC[2] = Pairing_Move.G1Point( 
             4226071103755408441011512039105765790642330455709869213542405890369574261507,
             21640413474146227185193433284078636118986821893668397474728883766123054524494
         );                                      
         
-        vk.IC[2] = Pairing_Move.G1Point( 
+        vk.IC[3] = Pairing_Move.G1Point( 
             3011418217152396593379611681419697121441251638066434444838378604516645020479,
             14980722380389666280403933962409439604062908091945948182023074379033849415671
         );                                      
         
-        vk.IC[3] = Pairing_Move.G1Point( 
-            11149099447123656912625321383397617604681475174078941657260633909471051633432,
-            4614720549254318461789331309809065005917090220548630718325130089833758912093
+        vk.IC[4] = Pairing_Move.G1Point( 
+            21225950124242114191865762017891168572286990886809689142931049916540361485157,
+            10569603441537197324146028321459060768442203286923896304955284021674546126415
         );                                      
         
-        vk.IC[4] = Pairing_Move.G1Point( 
+        vk.IC[5] = Pairing_Move.G1Point( 
             320331724690183086535289072554869435748525841502039039904436558765046437289,
             10515341076562446195728156164985909294641702192270773709311307443768559664903
         );                                      
         
-        vk.IC[5] = Pairing_Move.G1Point( 
+        vk.IC[6] = Pairing_Move.G1Point( 
             18163454590948383308641936964614132384873949291879071329413932786666782398733,
             16832037272055914517891302203426093844366767130579604916991522712977861006787
         );                                      
         
-        vk.IC[6] = Pairing_Move.G1Point( 
+        vk.IC[7] = Pairing_Move.G1Point( 
             11391201598147190886965898933700991250658483280554854814394866646486564615397,
             2570007224920837006481994661511265685758250597199708498493273302833165690685
         );                                      
         
-        vk.IC[7] = Pairing_Move.G1Point( 
+        vk.IC[8] = Pairing_Move.G1Point( 
             15366146122735885190230286553503680222605097191225119903769485148087970276333,
             19481395972855302237214901529783653507512659623388343253704142474700593299482
         );                                      
         
-        vk.IC[8] = Pairing_Move.G1Point( 
+        vk.IC[9] = Pairing_Move.G1Point( 
             5279740660268318296212516730100348369466953854260088019562333861973137331875,
             21334754403854971202445364085493840692687912457341897728277320343808533779889
         );                                      
         
-        vk.IC[9] = Pairing_Move.G1Point( 
+        vk.IC[10] = Pairing_Move.G1Point( 
             19366238459109462281794407602288680052358795744655017086791943460894405484478,
             17699096369981647437257643138093793322012203111037881548744082995516670380143
         );                                      
         
-        vk.IC[10] = Pairing_Move.G1Point( 
+        vk.IC[11] = Pairing_Move.G1Point( 
             11835171851617732719789521686716034601029442175127607152267187414519651284766,
             16380640977405205021807824135560542307849865031011966943287374743221408313764
-        );                                      
-        
-        vk.IC[11] = Pairing_Move.G1Point( 
-            15733779420540508492531675498159082773658368044938735726196827731860411518723,
-            6993232001324263008185015285429295544378086411251049615376147886378559266878
         );                                      
         
     }
@@ -273,7 +273,7 @@ contract MoveVerifier {
             vk_x = Pairing_Move.addition(vk_x, Pairing_Move.scalar_mul(vk.IC[i + 1], input[i]));
         }
         vk_x = Pairing_Move.addition(vk_x, vk.IC[0]);
-        if (!Pairing_Move.pairing_MovePairing_MoveProd4(
+        if (!Pairing_Move.pairing_MoveProd4(
             Pairing_Move.negate(proof.A), proof.B,
             vk.alfa1, vk.beta2,
             vk_x, vk.gamma2,
