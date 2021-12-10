@@ -25,6 +25,10 @@
   - js/lib: code for game logic
   - js/client.js: main code of client, used for communicating with smart contract, update UI, etc.
   - json: Application Binary Interface(ABI) for Ethereum smart contract
+4. routes
+  - http.js: frontend webserver
+5. smart_contract:
+  - contract/Junqi.sol: smart contract
 ## **How to build this project**
 1. Run Ganache
 2. Deploy smart_contract
