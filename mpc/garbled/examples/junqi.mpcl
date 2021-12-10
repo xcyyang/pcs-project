@@ -1,0 +1,33 @@
+// -*- go -*-
+//
+
+package main
+
+// a - garbler
+// b - evaluator
+// win (include remove-landmine) = 1, lost = 2, tie = 3
+
+func main(a, b int64) int {
+    if a == 0 || b == 0 || a == b {
+        // bomb or tie
+        return 3
+    } else if b == 10 {
+        // step on the landmine 
+        if a == 9 {
+            // snapper remove landmine
+            return 2
+        } else {
+            // boom
+            return 3
+        }
+    } else {
+        // battle
+        if a < b {
+            // win
+            return 2
+        } else {
+            // lose
+            return 1
+        }
+    }
+}

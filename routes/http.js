@@ -1,6 +1,28 @@
 //var DB = null;
 var path = require('path');
+const snarkjs = require('snarkjs')
+const fs = require('fs')
+const { exec } = require("child_process");
+const util = require('util')
+const exec_prom = util.promisify(exec);
 
+
+function unstringifyBigInts(o) {
+  if (typeof o == "string" && /^[0-9]+$/.test(o)) {
+    return BigInt(o);
+  } else if (Array.isArray(o)) {
+    return o.map(unstringifyBigInts);
+  } else if (typeof o == "object") {
+    const res = {};
+    const keys = Object.keys(o);
+    keys.forEach(k => {
+      res[k] = unstringifyBigInts(o[k]);
+    });
+    return res;
+  } else {
+    return o;
+  }
+}
 /**
  * Validate session data for "Game" page
  * Returns valid data on success or null on failure
@@ -178,14 +200,142 @@ exports.attach = function(app, db) {
   app.get('/game/:id', game);
   // app.post('/start',   startGame);
   // app.post('/join',    joinGame);
-  app.get('/zksnark/finishSetup.wasm', function(req, res){
-    const file = `../pcs-project/public/zksnark/finishSetup/finishSetup.wasm`;
-    res.sendFile(path.resolve(file)); // Set disposition and send it.
+  app.post('/zksnark/move', async function (req,res){
+    const board = req.body.board; // [5][12]
+    const senderOrReceiver = req.body.senderOrReceiver; // 0 for sender, 1 for receiver
+    const startSquare = req.body.startSquare; // [2]
+    const endSquare = req.body.endSquare; // [2]
+    //const startRank = req.body.startRank; // int
+    const endRank = req.body.endRank; // int 
+    const mpc_result = req.body.mpc_result; // int
+    const lastBoardHash = req.body.lastBoardHash;   // BigInt
+
+
+    const wc = require('../circom/move/Move_js/witness_calculator');
+    const wasm = path.resolve('./circom/move/Move_js/Move.wasm');
+    const zkey = path.resolve('./circom/move/circuit_final.zkey');
+    //const INPUTS_FILE = '/tmp/inputs';
+    var WITNESS_FILE = null;
+    if(senderOrReceiver == 0){
+      WITNESS_FILE = '/tmp/witness_0';
+    }else{
+      WITNESS_FILE = '/tmp/witness_1';
+    }
+    
+
+    const generateWitness = async (inputs) => {
+      const buffer = fs.readFileSync(wasm);
+      const witnessCalculator = await wc(buffer);
+      const buff = await witnessCalculator.calculateWTNSBin(inputs, 0);
+      fs.writeFileSync(WITNESS_FILE, buff);
+    }
+    try {
+      console.log(board);
+      console.log(senderOrReceiver);
+      console.log(startSquare);
+      console.log(endSquare);
+      console.log(endRank);
+      console.log(mpc_result);
+      console.log(lastBoardHash)
+      //console.log(typeof(player));
+      const inputSignals = { board: board 
+        , player: senderOrReceiver
+        , startsquare: startSquare
+        , endsquare: endSquare
+        , endrank: endRank
+        , mpc_result: mpc_result
+        , lastboardhash: lastBoardHash} // replace with your signals
+      await generateWitness(inputSignals);
+      const { proof, publicSignals } = await snarkjs.groth16.prove(zkey, WITNESS_FILE);  
+      console.log(proof);
+      console.log(publicSignals);
+      
+      const calls = await snarkjs.groth16.exportSolidityCallData(unstringifyBigInts(proof),unstringifyBigInts(publicSignals));
+      console.log(calls);
+      var args = JSON.parse("[" + calls + "]");
+      console.log(args);
+      args.push(publicSignals[0]);
+      res.status(200).send(args);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json(error);      
+    }
   });
-  app.get('/zksnark/circuit_final.zkey', function(req, res){
-    const file = `../pcs-project/public/zksnark/finishSetup/circuit_final.zkey`;
-    res.sendFile(path.resolve(file)); // Set disposition and send it.
+
+
+  app.post('/zksnark/finishSetup', async function (req, res){
+    const board = req.body.board;
+    const player = req.body.player;
+
+    const wc = require('../circom/finishSetup/finishSetup_js/witness_calculator');
+    const wasm = path.resolve('./circom/finishSetup/finishSetup_js/finishSetup.wasm');
+    const zkey = path.resolve('./circom/finishSetup/circuit_final.zkey');
+    //const INPUTS_FILE = '/tmp/inputs';
+    const WITNESS_FILE = '/tmp/witness';
+
+    const generateWitness = async (inputs) => {
+      const buffer = fs.readFileSync(wasm);
+      const witnessCalculator = await wc(buffer);
+      const buff = await witnessCalculator.calculateWTNSBin(inputs, 0);
+      fs.writeFileSync(WITNESS_FILE, buff);
+    }
+    try {
+      console.log(typeof(board));
+      console.log(typeof(player));
+      const inputSignals = { board: board 
+        , player: player} // replace with your signals
+      await generateWitness(inputSignals);
+      const { proof, publicSignals } = await snarkjs.groth16.prove(zkey, WITNESS_FILE);  
+      console.log(proof);
+      console.log(publicSignals);
+      
+      const calls = await snarkjs.groth16.exportSolidityCallData(unstringifyBigInts(proof),unstringifyBigInts(publicSignals));
+      console.log(calls);
+      let args = JSON.parse("[" + calls + "]");
+      console.log(args);
+      args.push(publicSignals[0]);
+      res.status(200).send(args);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json(error);      
+    }
   });
-  app.all('*',         invalid);
+
+  app.post('/mpc/evaluator', async function (req, res){
+    const startRank = req.body.startRank;
+    var path = '/home/yxcy/Desktop/pcs-project/mpc/garbled/garbled';
+    //var prog = path;
+    //var args = ['-e', '-i', startRank, path + '../mpc/garbled/examples/junqi.mpcl'];
+    const { stdout, stderr } = await exec_prom(path+ ' -e -i '+ startRank+ ' /home/yxcy/Desktop/pcs-project/mpc/garbled/examples/junqi.mpcl');
+    if (stderr) {
+      console.error(`error: ${stderr}`);
+      res.status(500).json(error);
+      return;
+    }
+    console.log(`${stdout}`);
+    const result = `${stdout}`
+    res.status(200).send(result);
+  });
+  app.post('/mpc/garbler', async function (req,res){
+    const endRank = req.body.endRank;
+    var path = '/home/yxcy/Desktop/pcs-project/mpc/garbled/garbled';
+    //var prog = path;
+    //var args = ['-i', endRank, path + '../mpc/garbled/examples/junqi.mpcl'];
+    var result = null;
+    while(1){
+      const { stdout, stderr } = await exec_prom(path+ ' -i '+ endRank+ ' /home/yxcy/Desktop/pcs-project/mpc/garbled/examples/junqi.mpcl');
+      if (stderr) {
+        console.error(`error: ${stderr}`);
+        //res.status(500).json(error);
+        continue;
+      }else{
+        console.log(`${stdout}`);
+        result = `${stdout}`;
+        break;
+      }
+    }
+    res.status(200).send(result);
+  }); 
+  app.all('*',invalid);
   
 };

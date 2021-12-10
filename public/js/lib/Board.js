@@ -144,7 +144,7 @@ Board.prototype.isCommanderAlive = function(playerColor) {
 
 // Evaluate an attack from startSquare to destination
 // Assumes both locations have pieces
-Board.prototype.evaluateMove = function(startSquare, destination) {
+Board.prototype.evaluateMove = function(startSquare, destination, mpcRsult) {
     var board = this.boardState;
     // One or more squares is missing pieces
     if (board[startSquare] == null || board[destination] == null) {
@@ -152,8 +152,15 @@ Board.prototype.evaluateMove = function(startSquare, destination) {
     }
     var playerPiece = board[startSquare];
     var enemyPiece = board[destination];
-    var compareResult = playerPiece.compareRank(enemyPiece);
-
+    //var compareResult = playerPiece.compareRank(enemyPiece);
+    var compareResult = null;
+    if(mpcRsult == 1){
+      compareResult = 1;
+    }else if(mpcRsult == 2){
+      compareResult = -1;
+    }else if(mpcRsult == 3){
+      compareResult = 0;
+    }
     var compareResultStringMap = new Map();
     compareResultStringMap.set(1, 'capture'); // greater rank
     compareResultStringMap.set(0, 'equal'); // equal rank
