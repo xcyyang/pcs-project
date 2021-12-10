@@ -15,16 +15,30 @@
 3. **(UPDATE)web3.js https://www.dappuniversity.com/articles/how-to-build-a-blockchain-app**
 ## **Hello World of Snarkjs**
 1. https://github.com/iden3/snarkjs
-
+## **Directory Layout**
+1. circom: zksnark circuit for computing finishSetup and move proof
+  - move/move.circom
+  - finishSetup/finishSetup.circom
+2. mpc/garbled: garbler circuit for comparing ranks of two players
+  - examples/junqi.mpcl
+3. public
+  - js/lib: code for game logic
+  - js/client.js: main code of client, used for communicating with smart contract, update UI, etc.
+  - json: Application Binary Interface(ABI) for Ethereum smart contract
 ## **How to build this project**
 1. Run Ganache
 2. Deploy smart_contract
+  - cd smart_contract
   - truffle migrate
   - truffle migrate --reset (used for resetting smart_contract)
-3. Run frontend server
+3. Compile MPC garbled
+  - cd mpc/garbled
+  - go mod tidy
+  - go build 
+5. Run frontend server
   - npm install
   - node server.js
-4. Need two different browsers (firefox, chrome, edge)
+6. Need two different browsers (firefox, chrome, edge)
   - Install Metamask extension for these browsers
   - add network(HTTP://127.0.0.1:7545, chain ID: 1337)
   - import accounts for different browsers (private key in Ganache)
