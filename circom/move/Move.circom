@@ -91,27 +91,23 @@ template findPath() {
     if (start[0]<5&&end[0]<5){
         for (var i = 0; i < 11; i++) {
             if ((line[0][i][0]==start[0] && line[0][i][1]==start[1])||(line[0][i][0]==end[0] && line[0][i][1]==end[1])){
-                avaliable = 1;
-            }
-            if (board[line[0][i][0]][line[0][i][1]]!=13 && avaliable ==1){
-                through = 0;
-            }
-            if ((line[0][i][0]==start[0] && line[0][i][1]==start[1])||(line[0][i][0]==end[0] && line[0][i][1]==end[1]) && avaliable == 1 ){
-                avaliable = 0;
+                avaliable = avaliable + 1;
+            }else{
+                if (board[line[0][i][0]][line[0][i][1]]!=13 && avaliable ==1){
+                    through = 0;
+                }
             }
         }
         //out <-- through;
-    } else if (start[0]>7&&end[0]>7) {
+    } else if (start[0]>6&&end[0]>6) {
         for (var i=0; i<11; i++) {
             if ((line[1][i][0]==start[0] && line[1][i][1]==start[1])||(line[1][i][0]==end[0] && line[1][i][1]==end[1])){
-                avaliable = 1;
-            }
-            if (board[line[1][i][0]][line[1][i][1]]!=13 && avaliable ==1){
-                through = 0;
-            }
-            if ((line[1][i][0]==start[0] && line[1][i][1]==start[1])||(line[1][i][0]==end[0] && line[1][i][1]==end[1]) && avaliable == 1 ){
-                avaliable = 0;
-            }
+                avaliable = avaliable + 1;
+            }else{
+                if (board[line[1][i][0]][line[1][i][1]]!=13 && avaliable ==1){
+                    through = 0;
+                }
+            }   
         }
         //out <-- through;
     }else{
@@ -119,7 +115,6 @@ template findPath() {
        // generate graph
         for(var i=0;i<2;i++){
             for(var j=0;j<5;j++){
-                if(board[i+5][j]!=13){
                     if(i+5 == start[0] && j == start[1]){
                         graphTemp[i*5+j+1][0]=1;
                         graphTemp[0][i*5+j+1]=1;
@@ -127,12 +122,14 @@ template findPath() {
                         graphTemp[i*5+j+1][11]=1;
                         graphTemp[11][i*5+j+1]=1;
                     }else{
-                        for (var w=0;w<12;w++){
-                            graphTemp[i*5+j+1][w]=0;
-                            graphTemp[w][i*5+j+1]=0;
+                        if(board[i+5][j]!=13){
+                            for (var w=0;w<12;w++){
+                                graphTemp[i*5+j+1][w]=0;
+                                graphTemp[w][i*5+j+1]=0;
+                            }
                         }
                     }
-                }
+                
             }
         }
         var forward = 1;
@@ -171,7 +168,10 @@ template findPath() {
             graphTemp[0][10]=backward;
             graphTemp[10][0]=backward;
         }
-            if(end[0]<5){
+        forward = 1;
+        backward = 1;
+        through = 0;
+        if(end[0]<5){
             for(var i=0;i<11;i++){
                 if (line[0][i][0]==end[0] && line[0][i][1]==end[1]){
                     through = 1;
@@ -208,7 +208,7 @@ template findPath() {
         for(var i = 0; i < 6; i++){
             for(var j = 1; j < 12; j++){
                 if(graphTemp[0][j]==1){
-                    for(var w = 0; w < 12; w++){
+                    for(var w = 1; w < 12; w++){
                         if(graphTemp[j][w]==1){
                             graphTemp[0][w]=1;
                         }

@@ -20,6 +20,14 @@ func main(a, b int64) int {
             // boom
             return 3
         }
+    }else if a == 10 {
+        if b == 9 {
+            // snapper remove landmine
+            return 1
+        } else {
+            // boom
+            return 3
+        }
     } else {
         // battle
         if a < b {
